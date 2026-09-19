@@ -35,6 +35,17 @@ const year = new Date().getFullYear();
     <header class="bar">
       <nav aria-label="Primary">
         <a class="wordmark" href="/">
+          <svg
+            class="mark"
+            viewBox="0 0 460 460"
+            fill="currentColor"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path d="M30 57 L85 57 L172 229.5 L85 402 L30 402 L115 229.5 Z" />
+            <path d="M430 57 L375 57 L288 229.5 L375 402 L430 402 L345 229.5 Z" />
+            <circle cx="229.5" cy="229.5" r="30.5" />
+          </svg>
           agent-chaperone
         </a>
         <div class="bar-links">
@@ -269,6 +280,14 @@ const year = new Date().getFullYear();
     color: var(--ink);
     text-decoration: none;
     font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+  }
+  .mark {
+    width: 1.05em;
+    height: 1.05em;
+    flex: none;
   }
   .bar-links {
     display: flex;

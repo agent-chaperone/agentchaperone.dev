@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 460" fill="currentColor" role="img" aria-label="agent-chaperone">
+  <path d="M30 57 L85 57 L172 229.5 L85 402 L30 402 L115 229.5 Z" />
+  <path d="M430 57 L375 57 L288 229.5 L375 402 L430 402 L345 229.5 Z" />
+  <circle cx="229.5" cy="229.5" r="30.5" />
+</svg>
