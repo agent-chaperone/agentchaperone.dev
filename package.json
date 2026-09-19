@@ -12,6 +12,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "check:spacing": "node scripts/check-spacing.mjs",
     "preview": "astro preview",
     "typecheck": "astro check",
     "lint": "eslint .",
