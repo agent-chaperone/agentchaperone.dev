@@ -11,7 +11,7 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "astro build && node scripts/make-markdown.mjs",
     "check:spacing": "node scripts/check-spacing.mjs",
     "preview": "astro preview",
     "typecheck": "astro check",
