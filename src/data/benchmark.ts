@@ -16,6 +16,16 @@ export const RUN = {
   toolVersion: '0.1.0',
 } as const;
 
+/**
+ * The version this site describes, which is the one npm serves.
+ *
+ * Deliberately not `RUN.toolVersion`. That one says which build produced the
+ * measurements and must not move when a release happens, or the numbers would
+ * start claiming to come from a run nobody made. This one says what a reader
+ * would install today. They were the same version once and are not any more.
+ */
+export const CURRENT_VERSION = '0.2.0';
+
 /** The thresholds the package actually ships with, from src/policy/schema.ts. */
 export const SHIPPED = {
   annotateInstructs: 0.5,
