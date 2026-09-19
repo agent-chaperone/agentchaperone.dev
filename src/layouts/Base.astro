@@ -28,6 +28,17 @@ const updated = RUN.date;
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+    {/* The same content as markdown, for a reader that would rather not strip
+    markup to find the structure. */}
+    <link
+      rel="alternate"
+      type="text/markdown"
+      href={
+        canonical === 'https://agentchaperone.dev/'
+          ? 'https://agentchaperone.dev/index.md'
+          : `${canonical}.md`
+      }
+    />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="agent-chaperone" />
     <meta property="og:title" content={ogTitle ?? title} />

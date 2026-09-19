@@ -49,6 +49,29 @@ jobs:
       - name: No word runs into a tag
         run: pnpm check:spacing
 
+      - name: The markdown twins are real
+        # Generated from the built HTML, so they cannot drift from the pages.
+        # What they can do is come out empty if the conversion breaks, and an
+        # empty twin tells a reader the page says almost nothing.
+        run: |
+          for page in index results; do
+            file="dist/$page.md"
+            if [ ! -f "$file" ]; then
+              echo "$file is missing, so the build did not produce a twin." >&2
+              exit 1
+            fi
+            if [ "$(wc -c < "$file")" -lt 1000 ]; then
+              echo "$file is too small to be the page it claims to be." >&2
+              exit 1
+            fi
+            if grep -qE '</[a-z]+>' "$file"; then
+              echo "$file still carries HTML tags, so the conversion is wrong:" >&2
+              grep -nE '</[a-z]+>' "$file" | head -3 >&2
+              exit 1
+            fi
+          done
+          echo "Both twins are present and readable."
+
       - name: No client JavaScript ships
         # The site's Content-Security-Policy says script-src 'none'. If a build
         # ever emits a script this fails here rather than in a browser console

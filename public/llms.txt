@@ -11,6 +11,11 @@ Every judgment comes back as a probability rather than a verdict. Thresholds liv
 - What it is not: a sandbox. It sees what a call says it will do and cannot stop a server doing something the call did not describe.
 - What leaves the machine: the arguments and results being screened go to the configured model backend. Secret-shaped strings are replaced first, and screening can be turned off per server.
 
+## This site, as markdown
+
+- [Overview](https://agentchaperone.dev/index.md): what it screens, what it is not, how it compares, and the shadow-to-enforce path
+- [Measured results](https://agentchaperone.dev/results.md): the same tables as the HTML page
+
 ## Docs
 
 - [README](https://raw.githubusercontent.com/agent-chaperone/agent-chaperone/main/README.md): install, the two screens, the commands, and the measured results
