@@ -91,9 +91,7 @@ function convert(html) {
   const out = [];
 
   // Block elements in the order they appear, so the twin reads in page order.
-  const blocks = main.matchAll(
-    /<(h1|h2|h3|h4|p|pre|ul|ol|table)\b[^>]*>(.*?)<\/\1>/gis,
-  );
+  const blocks = main.matchAll(/<(h1|h2|h3|h4|p|pre|ul|ol|table)\b[^>]*>(.*?)<\/\1>/gis);
 
   for (const [, tag, inner] of blocks) {
     if (tag === 'pre') {
@@ -113,7 +111,9 @@ function convert(html) {
         .map((m) => inline(m[1]))
         .filter((one) => one !== '');
       if (items.length > 0) {
-        out.push(items.map((one, at) => (tag === 'ol' ? `${at + 1}. ${one}` : `- ${one}`)).join('\n'));
+        out.push(
+          items.map((one, at) => (tag === 'ol' ? `${at + 1}. ${one}` : `- ${one}`)).join('\n'),
+        );
       }
       continue;
     }
