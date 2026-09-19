@@ -1,0 +1,65 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'none'; script-src 'none'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains; preload"
+        },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        {
+          "key": "Permissions-Policy",
+          "value": "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), interest-cohort=()"
+        },
+        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" }
+      ]
+    },
+    {
+      "source": "/_astro/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/github",
+      "destination": "https://github.com/agent-chaperone/agent-chaperone",
+      "permanent": true
+    },
+    {
+      "source": "/npm",
+      "destination": "https://www.npmjs.com/package/agent-chaperone",
+      "permanent": true
+    },
+    {
+      "source": "/docs",
+      "destination": "https://github.com/agent-chaperone/agent-chaperone/blob/main/docs/design.md",
+      "permanent": true
+    },
+    {
+      "source": "/hooks",
+      "destination": "https://github.com/agent-chaperone/agent-chaperone/blob/main/docs/hooks.md",
+      "permanent": true
+    },
+    {
+      "source": "/security",
+      "destination": "https://github.com/agent-chaperone/agent-chaperone/blob/main/SECURITY.md",
+      "permanent": true
+    },
+    {
+      "source": "/roadmap",
+      "destination": "https://github.com/agent-chaperone/agent-chaperone/blob/main/ROADMAP.md",
+      "permanent": true
+    },
+    { "source": "/benchmark", "destination": "/results", "permanent": true }
+  ]
+}

@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Lint, Typecheck, Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Format
+        run: pnpm format:check
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Build
+        run: pnpm build
+
+      - name: No client JavaScript ships
+        # The site's Content-Security-Policy says script-src 'none'. If a build
+        # ever emits a script this fails here rather than in a browser console
+        # on a page that has already shipped.
+        run: |
+          if find dist -name '*.js' -o -name '*.mjs' | grep -q .; then
+            echo "A JavaScript file was emitted, which the CSP forbids:" >&2
+            find dist -name '*.js' -o -name '*.mjs' >&2
+            exit 1
+          fi
+          if grep -rl '<script' dist --include='*.html' | grep -q .; then
+            echo "A <script> tag reached the HTML, which the CSP forbids:" >&2
+            grep -rl '<script' dist --include='*.html' >&2
+            exit 1
+          fi
+          echo "No client JavaScript, as the header promises."

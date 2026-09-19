@@ -1,0 +1,243 @@
+---
+import Base from '../layouts/Base.astro';
+import { RUN, SETS, SHIPPED, REPO, caught, missed, flaggedInError } from '../data/benchmark';
+
+const headline = SETS.filter((one) => one.headline);
+const n = (v: number): string => v.toLocaleString('en-US');
+const injec = SETS.find((one) => one.id === 'injecagent');
+const title = 'agent-chaperone';
+const description =
+  'Screening for AI agent tool calls and for the results they return. It starts in shadow mode and blocks nothing, so the decision to switch rests on your own log.';
+---
+
+<Base title={title} description={description} canonical="https://agentchaperone.dev/">
+  <section>
+    <h1>Screening for agent tool calls, and for what comes back.</h1>
+    <p class="lede">
+      agent-chaperone sits between an AI agent and its tools. It screens a call before it runs, and
+      a result before the agent reads it. Every judgment comes back as a probability, every
+      threshold is a number in a policy file rather than a prompt, and every decision is written to
+      a local log with the numbers that produced it.
+    </p>
+    <p>
+      It starts in shadow mode, which blocks nothing. The log shows what it would have held, so the
+      decision to switch rests on your own traffic rather than on my word for it.
+    </p>
+
+    <pre><code>npm install -g agent-chaperone</code></pre>
+
+    <p class="note">
+      Screening needs an API key for the model backend. Without one the deterministic rules still
+      run, which is the allow and deny lists and the secret patterns, and every judgment records
+      that no model was asked.
+    </p>
+
+    <pre class="term"><code>{'14:03:11 '}<span class="fwd">call   forward  read_file</span>{'  destructive 0.02 exfiltration 0.01\n'}{'14:03:11 '}<span class="would">call   forward  write_file (would have held it)</span>{'  destructive 0.91 severity 2.0\n'}{'14:03:11 '}<span class="held">result WITHHELD fetch</span>{'  instructs_reader 0.97'}</code></pre>
+
+    <p class="note">
+      That is shadow mode. Nothing was stopped. The middle line is the kind of thing that changes if
+      you switch.
+    </p>
+
+    <p>
+      <a href="/results">The measured results, including the misses</a>, and{' '}
+      <a href={REPO}>the source</a>.
+    </p>
+  </section>
+
+  <section id="not">
+    <h2>
+      What it is not{' '}
+      <a class="anchor" href="#not" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p class="lede">Read this part first.</p>
+    <ul class="plain">
+      <li>
+        <b>Not a sandbox.</b> It sees what a call says it will do. It cannot stop a server from
+        doing something the call did not describe. OS-level isolation covers that, and the two
+        belong together.
+      </li>
+      <li>
+        <b>Not a replacement for the client's permission prompts.</b> It is a second opinion that
+        reads the content, which a permission prompt does not. It never approves anything on your
+        behalf.
+      </li>
+      <li>
+        <b>Not a guarantee.</b> The underlying model does not treat its input as hostile by default,
+        and attacks written against this tool will get through. The numbers below report what it
+        catches and what it misses.
+      </li>
+      <li>
+        <b>Not local-only.</b> The arguments and results being screened go to the configured model
+        backend, so that content leaves the machine. Secret-shaped strings are replaced first, and
+        screening can be turned off per server for content that has to stay put.
+      </li>
+    </ul>
+  </section>
+
+  <section id="reach">
+    <h2>
+      Two ways in{' '}
+      <a class="anchor" href="#reach" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      The first is a proxy. One line in a client's MCP configuration wraps any server, and every
+      tool call and result crossing it is screened. Everything after <code>--</code> is the server
+      that would have run anyway.
+    </p>
+    <pre><code>{`{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "agent-chaperone", "--",
+               "npx", "-y", "@modelcontextprotocol/server-filesystem", "."]
+    }
+  }
+}`}</code></pre>
+    <p>
+      The second exists because a proxy sees MCP traffic and nothing else. It does not see the
+      shell, the file edits or the web fetches a client runs itself, and on the clients people
+      actually use those are where most of the damage lives. Two commands read a client's hook
+      payload and answer on stdout, against the same policy file and the same log.
+    </p>
+    <pre><code>agent-chaperone hook pre     # before the client runs a tool
+agent-chaperone hook post    # after it returns, before the model reads it</code></pre>
+    <p class="note">
+      The exact hook entries are in <a href={`${REPO}/blob/main/docs/hooks.md`}>the hooks guide</a>,
+      which also says what the hooks do not see.
+    </p>
+  </section>
+
+  <section id="decides">
+    <h2>
+      How it decides{' '}
+      <a class="anchor" href="#decides" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      Deterministic rules run first: allow and deny lists, secret patterns, dangerous shell forms,
+      and hidden-text detection. What survives goes to a small battery of typed judgments, each of
+      which comes back as a probability rather than a sentence.
+    </p>
+    <p>There are two tiers for a result, and the difference matters when reading the numbers.</p>
+    <ul class="plain">
+      <li>
+        <b>At {SHIPPED.annotateInstructs} and above, a result is annotated.</b> The agent still
+        reads it, with a banner saying part of it may be written to instruct the reader rather than
+        to inform you.
+      </li>
+      <li>
+        <b>At {SHIPPED.quarantineInstructs} and above it is withheld</b>, and only when the harm
+        judgment also reaches its level. The agent is told the call returned nothing and that you
+        can read the original.
+      </li>
+    </ul>
+    <p>
+      Three ways to check any of this without taking my word for it: run it in shadow mode and read
+      your own log, rebuild the published numbers from the recorded model responses in the
+      repository, or run it with no API key at all and get the deterministic rules on their own.
+    </p>
+  </section>
+
+  <section id="measured">
+    <h2>
+      What it caught, and what it missed
+      <a class="anchor" href="#measured" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      One run of <code>{RUN.model}</code> on {RUN.date}, {RUN.requests.toLocaleString('en-US')}{' '}
+      requests, costing ${RUN.costUsd.toFixed(3)} at the published price. Counts are at the annotate
+      threshold the package ships with, which is {SHIPPED.annotateInstructs}.
+    </p>
+    <table>
+      <caption>
+        Counts rather than rates, because a rate hides how many items it was measured on.
+      </caption>
+      <thead>
+        <tr>
+          <th>Set</th>
+          <th class="num">Items</th>
+          <th class="num">To catch</th>
+          <th class="num">Caught</th>
+          <th class="num">Missed</th>
+          <th class="num">Flagged in error</th>
+        </tr>
+      </thead>
+      <tbody>
+        {headline.map((set) => (
+          <tr>
+            <td>{set.name}</td>
+            <td class="num">{n(set.items)}</td>
+            <td class="num">{set.positives === 0 ? 'none' : n(set.positives)}</td>
+            <td class="num">{set.positives === 0 ? '-' : n(caught(set))}</td>
+            <td class="num">{set.positives === 0 ? '-' : n(missed(set))}</td>
+            <td class="num">{flaggedInError(set)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    <div class="callout">
+      <p>
+        The largest set is also the weakest. Of {injec === undefined ? '0' : n(injec.positives)}{' '}
+        injected tool results, {injec === undefined ? '0' : n(missed(injec))} were not flagged at
+        all, and of the {injec === undefined ? '0' : n(caught(injec))} that were, {injec?.withheld}{' '}
+        crossed the bar to be withheld rather than annotated. Lowering the threshold to 0.3 turns
+        those {injec === undefined ? '0' : n(missed(injec))} misses into 54, and the benign flags
+        from 7 into 46. That trade is yours to set, which is the reason the number lives in a file.
+      </p>
+    </div>
+    <p class="note">
+      Latency added to each screened call was {RUN.latencyP50Ms} ms at the median and{' '}
+      {RUN.latencyP95Ms} ms at the 95th percentile, measured from a laptop.{' '}
+      <a href="/results">The full picture, with every threshold and the misses named</a>.
+    </p>
+  </section>
+
+  <section id="shadow">
+    <h2>
+      Shadow to enforce{' '}
+      <a class="anchor" href="#shadow" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      Run it in shadow for a while and read the log. The entries marked as would-have are the list
+      of things that change when you switch, which makes the switch a decision rather than a leap.
+    </p>
+    <pre><code>agent-chaperone log</code></pre>
+    <p>
+      If you disagree with a line, move the threshold rather than the mode. When the log stops
+      surprising you, set <code>mode: enforce</code> in the policy file.
+    </p>
+  </section>
+
+  <section id="held">
+    <h2>
+      When a call is held{' '}
+      <a class="anchor" href="#held" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      In enforce and strict, a call that crosses a threshold does not run. This is what the agent is
+      handed:
+    </p>
+    <pre><code>{`agent-chaperone held this call to write_file for the user to approve: it looks
+like it changes something in a way that is hard to undo. The possible damage was
+rated high. Nothing ran. The user can allow it by running:
+agent-chaperone approve b2c4e6a8f0`}</code></pre>
+    <p>
+      The agent has not been told the call failed, and it has not been told to find another route.
+      It has been told that a person is deciding. You then look at what it wanted to do and allow it
+      if you agree. The token names that one call rather than that tool, so agreeing to a write to
+      one path does not release a write to another, and it expires.
+    </p>
+  </section>
+</Base>

@@ -1,0 +1,215 @@
+---
+import Base from '../layouts/Base.astro';
+import { RUN, SETS, SHIPPED, RELIABILITY, REPO } from '../data/benchmark';
+
+const pct = (v: number | null): string => (v === null ? '-' : v.toFixed(3));
+const n = (v: number): string => v.toLocaleString('en-US');
+const title = 'Measured results | agent-chaperone';
+const description = `One run of ${RUN.model} on ${RUN.date}: what the screening questions caught, what they missed, and what they flagged in error.`;
+---
+
+<Base title={title} description={description} canonical="https://agentchaperone.dev/results">
+  <section>
+    <h1>Measured results</h1>
+    <p class="lede">
+      One run of <code>{RUN.model}</code> on {RUN.date}. {RUN.requests.toLocaleString('en-US')}{' '}
+      requests, ${RUN.costUsd.toFixed(3)} at the published price, {RUN.meanInputTokens} input tokens
+      per request on average. Latency added to each screened call was {RUN.latencyP50Ms} ms at the
+      median and {RUN.latencyP95Ms} ms at the 95th percentile, from a laptop.
+    </p>
+    <p>
+      This is one dated run, not a scoreboard. The recorded model responses are committed, so the
+      scorer reproduces these numbers with no API key.{' '}
+      <a href={`${REPO}/tree/main/bench`}>The harness and the method</a> are in the repository.
+    </p>
+  </section>
+
+  <section id="shipped">
+    <h2>
+      What the package actually does at these numbers
+      <a class="anchor" href="#shipped" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      The sweeps below are a range, not a setting. These are the thresholds the package ships with,
+      so a row at another threshold is a what-if rather than a description of the tool.
+    </p>
+    <ul class="plain">
+      <li>
+        <b>A result is annotated at {SHIPPED.annotateInstructs}.</b> The agent reads it with a
+        banner attached.
+      </li>
+      <li>
+        <b>A result is withheld at {SHIPPED.quarantineInstructs}</b>, and only when the harm
+        judgment also reaches {SHIPPED.harmfulSeverityLevel}.
+      </li>
+      <li>
+        <b>
+          A call is held at {SHIPPED.holdExfiltration} for exfiltration and{' '}
+          {SHIPPED.holdDestructive} for a destructive change.
+        </b>{' '}
+        The two are separate questions with separate numbers.
+      </li>
+      <li>
+        <b>A result is redacted at {SHIPPED.redactSecret}</b> when it looks like it exposes a
+        credential the patterns did not already replace.
+      </li>
+    </ul>
+    <div class="callout">
+      <p>
+        Annotated is not withheld, and on the largest set the gap is wide. Of 1,054 injected tool
+        results, 848 were flagged at the annotate threshold, and 359 of those met the bar to be
+        withheld. The rest reached the agent with a banner on them. Whether that is enough depends
+        on what the agent does next, which is why the threshold is a number you own.
+      </p>
+    </div>
+  </section>
+
+  {SETS.map((set) => (
+    <section id={set.id}>
+      <h2>
+        {set.name}
+        <a class="anchor" href={`#${set.id}`} aria-label="Link to this section">
+          #
+        </a>
+      </h2>
+      <p>{set.what}</p>
+      <p class="note">
+        {n(set.items)} items,{' '}
+        {set.positives === 0 ? 'none of them positive' : `${n(set.positives)} positive`},
+        {set.auc === null ? ' AUC not defined with no positives' : ` AUC ${set.auc.toFixed(3)}`}.
+        Screened as a{' '}
+        {set.side === 'call'
+          ? 'tool call, before it runs'
+          : 'tool result, before the agent reads it'}
+        .
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th class="num">Threshold</th>
+            <th class="num">Precision</th>
+            <th class="num">Recall</th>
+            <th class="num">Flagged in error</th>
+            <th class="num">Missed</th>
+          </tr>
+        </thead>
+        <tbody>
+          {set.sweeps.map((s) => (
+            <tr>
+              <td class="num">{s.threshold.toFixed(1)}</td>
+              <td class="num">{pct(s.precision)}</td>
+              <td class="num">{pct(s.recall)}</td>
+              <td class="num">{n(s.falsePositives)}</td>
+              <td class="num">{n(s.falseNegatives)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  ))}
+
+  <section id="benign-detail">
+    <h2>
+      What the false positives actually were
+      <a class="anchor" href="#benign-detail" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      The benign set is documents that discuss prompt injection without performing one, which is the
+      hardest honest negative I could build. Every flag on it is wrong by construction. At the
+      shipped annotate threshold there were 7, and the two highest-scoring were a documentation
+      index written in a way that addresses automated readers, and a code sample containing the
+      literal text of a screening question. Both are the same failure: content about the mechanism
+      reading like the mechanism.
+    </p>
+  </section>
+
+  <section id="reliability">
+    <h2>
+      Reliability{' '}
+      <a class="anchor" href="#reliability" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <div class="callout">
+      <p>
+        Read this before the table. Roughly 70 percent of the scored items are positives, which is
+        not the mix of a real session, so this shows the ordering of the scores rather than
+        supporting a claim that the probabilities are calibrated to a base rate you would see in
+        use.
+      </p>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th class="num">Score range</th>
+          <th class="num">Items</th>
+          <th class="num">Observed positive rate</th>
+        </tr>
+      </thead>
+      <tbody>
+        {RELIABILITY.map((bin) => (
+          <tr>
+            <td class="num">
+              {bin.from.toFixed(1)} to {bin.to.toFixed(1)}
+            </td>
+            <td class="num">{n(bin.n)}</td>
+            <td class="num">{bin.observed.toFixed(3)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </section>
+
+  <section id="limits">
+    <h2>
+      Limits{' '}
+      <a class="anchor" href="#limits" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <ul class="plain">
+      <li>
+        <b>One run, one model version, one date.</b> Nothing here says what a different model
+        version does, and re-measuring is the only way to find out.
+      </li>
+      <li>
+        <b>These are public benchmarks.</b> They were not written against this tool. An attack
+        written against this tool is a different measurement, and a worse one.
+      </li>
+      <li>
+        <b>Two questions are not measured here.</b> The policy and off-task questions are only asked
+        when a policy or a task is configured, and no row above has either.
+      </li>
+      <li>
+        <b>The positive mix is not a session's mix.</b> See the note above the reliability table.
+      </li>
+      <li>
+        <b>The hand-labeled set is mine.</b> 100 calls I labeled myself, leaning toward shell
+        commands. A set I built is the weakest evidence on this page, which is why it sits beside
+        three I did not.
+      </li>
+    </ul>
+  </section>
+
+  <section id="reproduce">
+    <h2>
+      Reproduce it without a key
+      <a class="anchor" href="#reproduce" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <pre><code>{`git clone ${REPO.replace('https://github.com/', 'git@github.com:')}.git
+cd agent-chaperone/bench
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+.venv/bin/python src/score.py`}</code></pre>
+    <p>
+      That scores the committed responses against the labels and prints the table this page is built
+      from. If a number here disagrees with what you get,{' '}
+      <a href={`${REPO}/issues/new`}>that is worth an issue</a>.
+    </p>
+  </section>
+</Base>
