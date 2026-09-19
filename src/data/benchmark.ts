@@ -12,8 +12,6 @@ export const RUN = {
   date: '2026-09-19',
   requests: 1942,
   costUsd: 0.061,
-  latencyP50Ms: 405,
-  latencyP95Ms: 876,
   meanInputTokens: 753,
   toolVersion: '0.1.0',
 } as const;
@@ -44,6 +42,14 @@ export interface Set {
   readonly positives: number;
   readonly auc: number | null;
   readonly side: 'result' | 'call';
+  /**
+   * The threshold the shipped rule acts at for this side, which is what the
+   * counts are reported at. A result is annotated from 0.5. A call is held at
+   * 0.6 for exfiltration and 0.7 for a destructive change, and the benchmark
+   * scores the higher of those two questions, so the call rows use 0.7: the
+   * stricter of the pair, and therefore the smaller catch count of the two.
+   */
+  readonly reportedAt: number;
   readonly headline: boolean;
   readonly sweeps: readonly Sweep[];
   /** Of the positives, how many the shipped withhold rule would have withheld. */
@@ -59,6 +65,7 @@ export const SETS: readonly Set[] = [
     positives: 1054,
     auc: 0.976,
     side: 'result',
+    reportedAt: 0.5,
     headline: true,
     withheld: 359,
     sweeps: [
@@ -77,6 +84,7 @@ export const SETS: readonly Set[] = [
     positives: 200,
     auc: 1.0,
     side: 'result',
+    reportedAt: 0.5,
     headline: true,
     withheld: 10,
     sweeps: [
@@ -95,6 +103,7 @@ export const SETS: readonly Set[] = [
     positives: 0,
     auc: null,
     side: 'result',
+    reportedAt: 0.5,
     headline: true,
     sweeps: [
       { threshold: 0.3, precision: null, recall: null, falsePositives: 10, falseNegatives: 0 },
@@ -112,6 +121,7 @@ export const SETS: readonly Set[] = [
     positives: 51,
     auc: 0.993,
     side: 'call',
+    reportedAt: 0.7,
     headline: true,
     sweeps: [
       { threshold: 0.3, precision: 0.909, recall: 0.98, falsePositives: 5, falseNegatives: 1 },
@@ -129,6 +139,7 @@ export const SETS: readonly Set[] = [
     positives: 60,
     auc: 0.949,
     side: 'result',
+    reportedAt: 0.5,
     headline: false,
     sweeps: [
       { threshold: 0.3, precision: 1.0, recall: 0.55, falsePositives: 0, falseNegatives: 27 },
@@ -154,16 +165,16 @@ export const NPM = 'https://www.npmjs.com/package/agent-chaperone';
 
 /** Caught at the annotate line, of the positives in that set. */
 export function caught(set: Set): number {
-  const at = set.sweeps.find((one) => one.threshold === SHIPPED.annotateInstructs);
+  const at = set.sweeps.find((one) => one.threshold === set.reportedAt);
   return at === undefined ? 0 : set.positives - at.falseNegatives;
 }
 
 export function missed(set: Set): number {
-  const at = set.sweeps.find((one) => one.threshold === SHIPPED.annotateInstructs);
+  const at = set.sweeps.find((one) => one.threshold === set.reportedAt);
   return at === undefined ? 0 : at.falseNegatives;
 }
 
 export function flaggedInError(set: Set): number {
-  const at = set.sweeps.find((one) => one.threshold === SHIPPED.annotateInstructs);
+  const at = set.sweeps.find((one) => one.threshold === set.reportedAt);
   return at === undefined ? 0 : at.falsePositives;
 }
