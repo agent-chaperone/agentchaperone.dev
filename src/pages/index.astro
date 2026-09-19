@@ -85,9 +85,9 @@ const description =
       </a>
     </h2>
     <p>
-      The first is a proxy. One line in a client's MCP configuration wraps any server, and every
-      tool call and result crossing it is screened. Everything after <code>--</code> is the server
-      that would have run anyway.
+      The first is a proxy. One change to a client's MCP configuration wraps a stdio server, and
+      every tool call and result crossing it is screened. Everything after <code>--</code> is the
+      server that would have run anyway.
     </p>
     <pre><code>{`{
   "mcpServers": {
@@ -153,8 +153,19 @@ agent-chaperone hook post    # after it returns, before the model reads it</code
     </h2>
     <p>
       One run of <code>{RUN.model}</code> on {RUN.date}, {RUN.requests.toLocaleString('en-US')}{' '}
-      requests, costing ${RUN.costUsd.toFixed(3)} at the published price. Counts are at the annotate
-      threshold the package ships with, which is {SHIPPED.annotateInstructs}.
+      requests, costing ${RUN.costUsd.toFixed(3)} at the published price.
+    </p>
+    <p>
+      Each row is counted at the threshold its own side of the tool acts at. A result is annotated
+      from {SHIPPED.annotateInstructs}. A call is held at {SHIPPED.holdExfiltration} for
+      exfiltration and {SHIPPED.holdDestructive} for a destructive change, so the call row uses{' '}
+      {SHIPPED.holdDestructive}, the stricter of that pair.
+    </p>
+    <p class="note">
+      The request count is larger than the items below add up to. It covers a fifth set scored
+      against a different question, which is on the results page rather than here, and 19
+      hand-labeled calls I marked ambiguous and left out of the headline. Both are in the
+      repository.
     </p>
     <table>
       <caption>
@@ -174,6 +185,7 @@ agent-chaperone hook post    # after it returns, before the model reads it</code
         {headline.map((set) => (
           <tr>
             <td>{set.name}</td>
+            <td class="num">{set.reportedAt.toFixed(1)}</td>
             <td class="num">{n(set.items)}</td>
             <td class="num">{set.positives === 0 ? 'none' : n(set.positives)}</td>
             <td class="num">{set.positives === 0 ? '-' : n(caught(set))}</td>
@@ -194,8 +206,8 @@ agent-chaperone hook post    # after it returns, before the model reads it</code
       </p>
     </div>
     <p class="note">
-      Latency added to each screened call was {RUN.latencyP50Ms} ms at the median and{' '}
-      {RUN.latencyP95Ms} ms at the 95th percentile, measured from a laptop.{' '}
+      Each screened call costs one model request, and a call the allow or deny list settles never
+      reaches the model at all.{' '}
       <a href="/results">The full picture, with every threshold and the misses named</a>.
     </p>
   </section>

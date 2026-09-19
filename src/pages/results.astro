@@ -14,8 +14,7 @@ const description = `One run of ${RUN.model} on ${RUN.date}: what the screening 
     <p class="lede">
       One run of <code>{RUN.model}</code> on {RUN.date}. {RUN.requests.toLocaleString('en-US')}{' '}
       requests, ${RUN.costUsd.toFixed(3)} at the published price, {RUN.meanInputTokens} input tokens
-      per request on average. Latency added to each screened call was {RUN.latencyP50Ms} ms at the
-      median and {RUN.latencyP95Ms} ms at the 95th percentile, from a laptop.
+      per request on average. Each screened call costs one model request.
     </p>
     <p>
       This is one dated run, not a scoreboard. The recorded model responses are committed, so the
