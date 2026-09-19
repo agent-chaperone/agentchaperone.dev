@@ -1,5 +1,6 @@
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
+import { RUN } from './src/data/benchmark';
 
 // Static output and no adapter. Every page here is prose, one diagram and two
 // tables, so nothing needs a server at request time and nothing needs to hydrate.
@@ -16,6 +17,21 @@ export default defineConfig({
     // that means what it says.
     inlineStylesheets: 'never',
   },
-  integrations: [sitemap()],
+  integrations: [
+    sitemap({
+      // A date a crawler can read. Every page here is prose about a released
+      // version, so the date that matters is the release the page describes,
+      // not the moment the build ran: a rebuild with no content change should
+      // not claim the page is newer than it is.
+      lastmod: new Date(RUN.date),
+      serialize: (page) => ({
+        ...page,
+        // The landing page is the one worth crawling most often, and the only
+        // one that changes when anything about the tool does.
+        changefreq: 'weekly',
+        priority: page.url === 'https://agentchaperone.dev/' ? 1.0 : 0.8,
+      }),
+    }),
+  ],
   devToolbar: { enabled: false },
 });

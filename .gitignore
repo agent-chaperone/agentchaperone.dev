@@ -7,3 +7,6 @@ dist/
 
 # Local tooling, never committed
 .claude/
+
+# Python bytecode from the image scripts
+__pycache__/

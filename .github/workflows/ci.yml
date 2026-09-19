@@ -53,15 +53,39 @@ jobs:
         # The site's Content-Security-Policy says script-src 'none'. If a build
         # ever emits a script this fails here rather than in a browser console
         # on a page that has already shipped.
+        #
+        # One exception, and only one: a `type="application/ld+json"` block is a
+        # data block that never executes, so script-src has nothing to act on.
+        # It is allowed, and each one is parsed here to prove it really is data
+        # rather than something wearing the type attribute.
         run: |
           if find dist -name '*.js' -o -name '*.mjs' | grep -q .; then
             echo "A JavaScript file was emitted, which the CSP forbids:" >&2
             find dist -name '*.js' -o -name '*.mjs' >&2
             exit 1
           fi
-          if grep -rl '<script' dist --include='*.html' | grep -q .; then
-            echo "A <script> tag reached the HTML, which the CSP forbids:" >&2
-            grep -rl '<script' dist --include='*.html' >&2
-            exit 1
-          fi
+          python3 - <<'CHECK'
+          import json
+          import re
+          import sys
+          from pathlib import Path
+
+          LD = re.compile(
+              r'<script[^>]*\btype=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
+              re.S | re.I,
+          )
+          problems = []
+          for page in sorted(Path("dist").rglob("*.html")):
+              html = page.read_text(encoding="utf-8")
+              for block in LD.findall(html):
+                  try:
+                      json.loads(block)
+                  except json.JSONDecodeError as bad:
+                      problems.append(f"{page}: the JSON-LD block does not parse: {bad}")
+              if "<script" in LD.sub("", html):
+                  problems.append(f"{page}: a script tag that is not JSON-LD")
+          if problems:
+              print("The CSP forbids this:", *problems, sep="\n  ", file=sys.stderr)
+              sys.exit(1)
+          CHECK
           echo "No client JavaScript, as the header promises."
