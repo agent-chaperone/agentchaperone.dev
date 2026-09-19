@@ -85,9 +85,10 @@ const description =
       </a>
     </h2>
     <p>
-      The first is a proxy. One change to a client's MCP configuration wraps a stdio server, and
-      every tool call and result crossing it is screened. Everything after <code>--</code> is the
-      server that would have run anyway.
+      The first is a proxy. One change to a client's MCP configuration wraps a server, whether it
+      runs as a local process or answers over HTTP somewhere else, and every tool call and result
+      crossing it is screened. Everything after <code>--</code> is the server that would have run
+      anyway, or the URL of one already running.
     </p>
     <pre><code>{`{
   "mcpServers": {

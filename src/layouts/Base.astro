@@ -1,5 +1,5 @@
 ---
-import { RUN, REPO, NPM } from '../data/benchmark';
+import { RUN, REPO, NPM, CURRENT_VERSION } from '../data/benchmark';
 
 interface Props {
   readonly title: string;
@@ -129,8 +129,9 @@ const year = new Date().getFullYear();
         </div>
       </div>
       <p class="provenance">
-        This page describes agent-chaperone {RUN.toolVersion}. The measured numbers are one run of{' '}
-        <code>{RUN.model}</code> on {RUN.date}. Copyright {year}, Apache-2.0.
+        This page describes agent-chaperone {CURRENT_VERSION}. The measured numbers are one run of{' '}
+        <code>{RUN.model}</code> against {RUN.toolVersion} on {RUN.date}. Copyright {year},
+        Apache-2.0.
       </p>
     </footer>
   </body>
