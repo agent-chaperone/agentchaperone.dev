@@ -55,10 +55,7 @@ const updated = RUN.date;
     <meta name="theme-color" content="#0c0d10" />
     <meta name="color-scheme" content="dark light" />
     {schema === undefined ? null : (
-      <script
-        type="application/ld+json"
-        set:html={JSON.stringify(schema)}
-      />
+      <script type="application/ld+json" set:html={JSON.stringify(schema)}></script>
     )}
   </head>
   <body>
@@ -163,8 +160,8 @@ const updated = RUN.date;
       </div>
       <p class="provenance">
         This page describes agent-chaperone {CURRENT_VERSION}. The measured numbers are one run of{' '}
-        <code>{RUN.model}</code> against {RUN.toolVersion} on {RUN.date}. Copyright {year},
-        Apache-2.0.
+        <code>{RUN.model}</code> against {RUN.toolVersion} on{' '}
+        <time datetime={updated}>{RUN.date}</time>. Copyright {year}, Apache-2.0.
       </p>
     </footer>
   </body>
