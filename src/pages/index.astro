@@ -75,10 +75,10 @@ const description =
         screening can be turned off per server for content that has to stay put.
       </li>
       <li>
-        <b>Not a reader of tool descriptions.</b> The tool list is compared against the one a server
-        first advertised, so a description that changes is caught. Nothing asks whether a
-        description was hostile to begin with, so a server that arrives already carrying an
-        instruction is caught only when it changes.
+        <b>Not calibrated outside one model.</b> Every threshold here was chosen against measured
+        numbers from Jev. Screening through a general gateway is supported and returns numbers that
+        look the same and mean something else, so the results below say nothing about that. Read
+        your own log before letting one of those decide anything.
       </li>
     </ul>
   </section>
@@ -175,6 +175,21 @@ agent-chaperone hook post    # after it returns, before the model reads it</code
       and want it to become the new expectation, <code>agent-chaperone trust &lt;server&gt;</code>{' '}
       accepts it, by forgetting what was recorded so that the next list is the one to expect.
     </p>
+    <p>
+      Reading the descriptions, rather than only noticing that one changed, is a separate switch and
+      it is off by default. Turning it on asks whether a description goes past describing its own
+      tool and tries to steer the agent, and it sends every new or changed description to the model
+      backend in order to ask, which is why nobody acquires it by upgrading.
+    </p>
+    <pre><code>{`servers:
+  filesystem:
+    screen_tool_descriptions: true`}</code></pre>
+    <p>
+      That question is not one the numbers below cover. No set in the benchmark asks it, so its
+      threshold is a judgement rather than a figure read off a curve, and the notice it prints says
+      as much rather than stating a verdict. A description nothing could read, because it was too
+      long to judge or the screen could not run, is reported as unread rather than passed over.
+    </p>
   </section>
 
   <section id="measured">
@@ -256,10 +271,20 @@ agent-chaperone hook post    # after it returns, before the model reads it</code
       Run it in shadow for a while and read the log. The entries marked as would-have are the list
       of things that change when you switch, which makes the switch a decision rather than a leap.
     </p>
-    <pre><code>agent-chaperone log</code></pre>
+    <pre><code>agent-chaperone report</code></pre>
     <p>
-      If you disagree with a line, move the threshold rather than the mode. When the log stops
-      surprising you, set <code>mode: enforce</code> in the policy file.
+      That leads with the count of decisions enforcement would have stopped and did not, which is
+      the question shadow mode is actually asking. Among them is whatever work you wanted done.{' '}
+      <code>agent-chaperone log</code> prints them one per line, and <code>show</code> opens one.
+    </p>
+    <p>
+      If you disagree with a line, move the threshold rather than the mode. You do not have to guess
+      at the new number: <code>replay</code> decides again over what was already judged, under a
+      policy you are considering, and says which way each decision moves.
+    </p>
+    <pre><code>agent-chaperone replay --policy candidate.yaml</code></pre>
+    <p>
+      When the log stops surprising you, set <code>mode: enforce</code> in the policy file.
     </p>
   </section>
 
