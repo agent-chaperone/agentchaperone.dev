@@ -94,6 +94,54 @@ const description =
     </ul>
   </section>
 
+  <section id="compares">
+    <h2>
+      How this compares{' '}
+      <a class="anchor" href="#compares" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+
+    <h3>Why not just sandbox the agent?</h3>
+    <p>
+      Do both. A sandbox and this answer different questions: a sandbox limits what a process can
+      reach, and this reads what a call is actually asking for. A container will happily let an
+      agent <code>curl</code> your environment out to a webhook, because that is a normal thing for
+      a process to do. What it catches, this one misses; what this catches, it misses.
+    </p>
+
+    <h3>Why not rely on the client's permission prompts?</h3>
+    <p>
+      A permission prompt shows you the call and asks. It does not read the result that comes back,
+      which is where injected instructions arrive, and it cannot tell a routine <code>rm</code> from
+      a destructive one because it is not looking at the content. This never approves anything on
+      your behalf, so the prompts still happen. It is a second opinion that has read the text.
+    </p>
+
+    <h3>Why not just allow-list the tools you trust?</h3>
+    <p>
+      You should, and this has allow and deny lists built in. They run first, deterministically,
+      with no model involved. The limit is that a list names tools rather than what a call does with
+      them: <code>write_file</code> is on your list either way, whether the path is{' '}
+      <code>src/auth.ts</code> or <code>~/.ssh/authorized_keys</code>.
+    </p>
+
+    <h3>Why not read the tool calls yourself?</h3>
+    <p>
+      For a handful of calls, do. It stops scaling at about the point agents get useful: a single
+      web fetch can return forty kilobytes, and the instruction hidden in it is one sentence in the
+      middle. This starts in shadow mode precisely so you read your own log first and decide what
+      you would have wanted stopped.
+    </p>
+
+    <h3>Is this just a prompt-injection classifier?</h3>
+    <p>
+      That is half of it. A classifier reads results. This also screens calls before they run, which
+      is the half that catches a destructive command or a secret heading somewhere it should not,
+      neither of which is prompt injection. The numbers below cover both directions separately.
+    </p>
+  </section>
+
   <section id="reach">
     <h2>
       Two ways in{' '}
