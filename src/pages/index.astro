@@ -74,6 +74,12 @@ const description =
         backend, so that content leaves the machine. Secret-shaped strings are replaced first, and
         screening can be turned off per server for content that has to stay put.
       </li>
+      <li>
+        <b>Not a reader of tool descriptions.</b> The tool list is compared against the one a server
+        first advertised, so a description that changes is caught. Nothing asks whether a
+        description was hostile to begin with, so a server that arrives already carrying an
+        instruction is caught only when it changes.
+      </li>
     </ul>
   </section>
 
@@ -142,6 +148,32 @@ agent-chaperone hook post    # after it returns, before the model reads it</code
       Three ways to check any of this without taking my word for it: run it in shadow mode and read
       your own log, rebuild the published numbers from the recorded model responses in the
       repository, or run it with no API key at all and get the deterministic rules on their own.
+    </p>
+  </section>
+
+  <section id="toollist">
+    <h2>
+      When a server changes shape{' '}
+      <a class="anchor" href="#toollist" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      A server describes its own tools, and the agent reads those descriptions as instructions about
+      what the tools are for. You decide to trust a server once, against the tools it advertised
+      that day, and nothing makes that decision again.
+    </p>
+    <p>
+      So the first list a server sends is recorded: a digest of each tool's description and input
+      schema, not the text. Every later list is compared against it, and a rewritten description, a
+      tool that appeared and a tool that vanished are each reported. The comparison is local. It
+      sends nothing anywhere and it needs no key.
+    </p>
+    <p>
+      It never withholds the list. A client that cannot read the tool list cannot call anything, so
+      a finding here is addressed to you rather than to the agent. Once you have looked at a change
+      and want it to become the new expectation, <code>agent-chaperone trust &lt;server&gt;</code>{' '}
+      accepts it, by forgetting what was recorded so that the next list is the one to expect.
     </p>
   </section>
 
