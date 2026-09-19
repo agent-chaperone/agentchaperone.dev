@@ -1,0 +1,245 @@
+---
+import Base from '../../layouts/Base.astro';
+import { REPO, SETS, SHELL } from '../../data/benchmark';
+import { findGuide, guideUrl } from '../../data/guides';
+import { guideSchema } from '../../data/schema';
+
+const guide = findGuide('claude-code');
+const precall = SETS.find((one) => one.id === 'precall');
+---
+
+<Base
+  title={guide.title}
+  ogTitle={guide.h1}
+  description={guide.description}
+  canonical={guideUrl(guide)}
+  schema={guideSchema(guide)}
+>
+  <section>
+    <h1>{guide.h1}</h1>
+    <p class="lede">
+      Claude Code runs shell commands, file edits and web fetches itself. Those never become MCP
+      messages, so a proxy sitting in front of your MCP servers does not see a single one of them.
+      Two hook commands read the client's own tool calls and results and answer on stdout, against
+      the same policy file, the same questions and the same log.
+    </p>
+    <p>
+      This is where the damage concentrates rather than a completeness exercise. Of the{' '}
+      {precall?.items} hand-labeled calls in the benchmark, {SHELL.scored} are shell commands, and
+      of the {precall?.positives} dangerous ones, {SHELL.dangerous} are.
+    </p>
+  </section>
+
+  <section id="config">
+    <h2>
+      The configuration{' '}
+      <a class="anchor" href="#config" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      In <code>~/.claude/settings.json</code> for every project, or{' '}
+      <code>.claude/settings.json</code> for one.
+    </p>
+    <pre><code>{`{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell|Edit|Write|WebFetch",
+        "hooks": [{ "type": "command", "command": "agent-chaperone hook pre" }]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|PowerShell|Read|WebFetch",
+        "hooks": [{ "type": "command", "command": "agent-chaperone hook post" }]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "Bash|PowerShell|Read|WebFetch",
+        "hooks": [{ "type": "command", "command": "agent-chaperone hook post" }]
+      }
+    ]
+  }
+}`}</code></pre>
+    <p>
+      The matchers are a starting point rather than a recommendation. Pre-tool screening is worth
+      having on anything that changes state or sends data out. Post-tool screening is worth having
+      on anything that brings in text from somewhere you did not write, which is where an injected
+      instruction arrives.
+    </p>
+    <p>
+      Three details in there are not decoration. <code>PowerShell</code> is in both lists because on
+      Windows, wherever that tool is enabled, the client routes shell commands through it and does
+      not register <code>Bash</code> at all, so a matcher naming only <code>Bash</code> screens
+      nothing there and fails silently. <code>PostToolUseFailure</code> is a separate event, and
+      without it a failed tool's output is never screened, even though a fetch that failed still
+      returned a body and a command that exited non-zero still printed. And <code>Read</code> sits
+      in the post list but not the pre list, because the risk in reading a file is what the file
+      says, not that it was read.
+    </p>
+  </section>
+
+  <section id="answers">
+    <h2>
+      What each command answers{' '}
+      <a class="anchor" href="#answers" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      <code>agent-chaperone hook pre</code> returns one of three things.
+    </p>
+    <ul class="plain">
+      <li>
+        <b>Nothing at all, when the call is fine.</b> That is deliberately not the same as approving
+        it. Your own permission rules still run. A screening tool that quietly auto-approved what
+        you had asked to be prompted about would be taking something away rather than adding it.
+      </li>
+      <li>
+        <b>A deny, with a reason the model reads</b>, when the policy denies that tool outright.
+      </li>
+      <li>
+        <b>An ask, with a reason</b>, when the call is held. You are already at the keyboard, so the
+        client is asked to put the question in front of you rather than pointing you at a command.
+        The reason still names <code>agent-chaperone approve</code>, for a client that shows the
+        text and carries on.
+      </li>
+    </ul>
+    <p>
+      <code>agent-chaperone hook post</code> replaces the tool output when a result is withheld or
+      annotated, and returns nothing when it passes. For a failed tool it adds context instead,
+      because that event accepts context and nothing else. So a failed call's output can be
+      annotated and never withheld, and the notice says so rather than implying the content was kept
+      back.
+    </p>
+    <p class="note">
+      That last one is the client's contract rather than a choice, and it is the reason the post
+      screen is worth registering on both events even though only one of them can act.
+    </p>
+  </section>
+
+  <section id="env">
+    <h2>
+      What it reads from the environment{' '}
+      <a class="anchor" href="#env" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      Screening needs an API key in the environment the client launches hooks in. Without one the
+      deterministic rules still run, which is the allow and deny lists and the secret patterns, and
+      every judgment records that no model was asked.
+    </p>
+    <p>
+      A hook is launched with a fixed command line, so the choices a proxy takes as flags are taken
+      from the environment here. Setting <code>AGENT_CHAPERONE_STORE_CONTENT=0</code> keeps the
+      judgments and drops the arguments and result text.
+    </p>
+    <p>
+      The policy file is read from <code>~/.config/agent-chaperone/policy.yaml</code>, or from{' '}
+      <code>AGENT_CHAPERONE_POLICY</code> when that is set. Built-in tools are recorded under the
+      server name <code>built-in</code>, so a policy can name them the same way it names a server.
+    </p>
+    <pre><code>{`mode: shadow
+
+servers:
+  built-in:
+    deny_tools: ['WebFetch']`}</code></pre>
+  </section>
+
+  <section id="blind">
+    <h2>
+      What hooks cannot see{' '}
+      <a class="anchor" href="#blind" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p class="lede">Worth knowing before trusting the configuration above to cover file reads.</p>
+    <p>
+      A hook fires on a tool call, so anything reaching the model without one is outside this
+      entirely. The clearest case is a file you reference directly in your own message: the client
+      inlines it into the prompt, no tool runs, no hook fires, and nothing here screens it or
+      records it. The same goes for whatever the client loads at startup, including its own
+      instruction files.
+    </p>
+    <p>
+      So the coverage is files the agent chose to read. It is not files you handed it. That
+      distinction is easy to lose once the hooks are installed and the log starts filling up.
+    </p>
+    <p>
+      The other half is still MCP. Hooks cover the client's own tools, and{' '}
+      <a href="/guides/mcp-security">the proxy covers the servers</a>. Neither one covers the other,
+      and running both is the configuration this was designed around.
+    </p>
+  </section>
+
+  <section id="task">
+    <h2>
+      Recording what you asked for{' '}
+      <a class="anchor" href="#task" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      One question the screens can ask is whether a call has anything to do with what you actually
+      wanted, and it is the only one that needs something no tool call contains. Without a recorded
+      task it is never sent at all.
+    </p>
+    <pre><code>{`agent-chaperone task "fix the login redirect, nothing outside src/auth"
+agent-chaperone task            # read it back
+agent-chaperone task --clear`}</code></pre>
+    <p>
+      The task is scoped to the working directory and believed for twelve hours, then ignored. A
+      stale task is worse than none: the screen would judge today's calls against intent you have
+      moved on from, and be confidently wrong rather than silent.
+    </p>
+    <p>
+      A client that already knows what you asked can record it without anyone typing. On Claude
+      Code, a prompt-submit hook receives the prompt on stdin and hands it straight over.
+    </p>
+    <pre><code>{`{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r .prompt | xargs -0 agent-chaperone task"
+          }
+        ]
+      }
+    ]
+  }
+}`}</code></pre>
+    <div class="callout">
+      <p>
+        Worth knowing before turning that on. Your prompt is then sent to the model backend with
+        every screened call afterwards, which hands over more than a tool call alone would. The
+        off-task threshold defaults high because a wrong answer here blocks work you asked for. Read
+        your own log in shadow mode before letting it hold anything.
+      </p>
+    </div>
+  </section>
+
+  <section id="others">
+    <h2>
+      Other clients{' '}
+      <a class="anchor" href="#others" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      The entries above are for Claude Code, written against its published hook reference. Cursor
+      documents a comparable hook system, and Codex has not been checked. Each client's contract
+      differs in what a post-tool hook may replace, and that difference decides whether the
+      post-result screen can withhold a result or only annotate it. Adding another client means
+      reading that client's contract rather than assuming this one carries over.
+    </p>
+    <p class="note">
+      The full hooks document, including how a replacement is matched to a tool's own output shape,
+      is <a href={`${REPO}/blob/main/docs/hooks.md`}>in the repository</a>.
+    </p>
+  </section>
+</Base>

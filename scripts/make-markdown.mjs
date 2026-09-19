@@ -15,7 +15,7 @@
  */
 
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, relative, sep } from 'node:path';
 
 const DIST = 'dist';
 const SITE = 'https://agentchaperone.dev';
@@ -53,6 +53,10 @@ function inline(html) {
         const url = href.startsWith('/') ? `${SITE}${href}` : href;
         return url.startsWith('#') ? clean : `[${clean}](${url})`;
       })
+      // A block boundary is worth a space. Stripped bare, a title inside a list
+      // item runs straight into the paragraph under it, and the twin reads as one
+      // mangled sentence where the page reads as two lines.
+      .replace(/<\/?(?:p|div|br|h[1-6]|li)[^>]*>/gi, ' ')
       .replace(/<[^>]*>/g, ''),
   )
     .replace(/[ \t]+/g, ' ')
@@ -128,14 +132,35 @@ function convert(html) {
   return out.join('\n\n');
 }
 
+/**
+ * Every built page, as a path relative to dist.
+ *
+ * Walked rather than listed, because a section is a directory: the guides build
+ * to dist/guides/*.html, and a flat read of dist would silently give those no
+ * twin at all while still reporting success for the two pages at the top.
+ */
+function pages(dir = DIST) {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      // _astro carries the stylesheet and never a page.
+      return entry.name.startsWith('_') ? [] : pages(full);
+    }
+    if (!entry.name.endsWith('.html') || entry.name === '404.html') {
+      return [];
+    }
+    return [relative(DIST, full).split(sep).join('/')];
+  });
+}
+
 function main() {
-  const pages = readdirSync(DIST).filter((name) => name.endsWith('.html') && name !== '404.html');
   let written = 0;
-  for (const page of pages) {
+  for (const page of pages()) {
     const html = readFileSync(join(DIST, page), 'utf8');
     const title = /<title>(.*?)<\/title>/is.exec(html)?.[1] ?? '';
     const description = /<meta name="description" content="([^"]*)"/i.exec(html)?.[1] ?? '';
-    const path = page === 'index.html' ? '/' : `/${page.replace(/\.html$/, '')}`;
+    const slug = page.replace(/\.html$/, '');
+    const path = slug === 'index' ? '/' : `/${slug}`;
     const body = convert(html);
 
     if (body.length < 200) {
@@ -157,9 +182,9 @@ function main() {
       .filter((one) => one !== undefined)
       .join('\n');
 
-    writeFileSync(join(DIST, page.replace(/\.html$/, '.md')), `${front}\n`);
+    writeFileSync(join(DIST, `${slug}.md`), `${front}\n`);
     written += 1;
-    console.log(`${path} -> ${page.replace(/\.html$/, '.md')} (${body.length} chars, "${title}")`);
+    console.log(`${path} -> ${slug}.md (${body.length} chars, "${title}")`);
   }
   if (written === 0) {
     throw new Error('no pages were converted, which means dist/ was not built');

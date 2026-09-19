@@ -17,6 +17,7 @@
  */
 
 import { CURRENT_VERSION, NPM, REPO, RUN } from './benchmark';
+import { GUIDES, guideUrl, type Guide } from './guides';
 
 const SITE = 'https://agentchaperone.dev';
 const ORG = `${SITE}/#organization`;
@@ -111,6 +112,107 @@ export function resultsSchema(): unknown {
         measurementTechnique: 'Calibrated probability screening of tool calls and tool results',
         variableMeasured: ['precision', 'recall', 'false positives', 'false negatives'],
         about: { '@id': APP },
+      },
+      APPLICATION,
+    ],
+  };
+}
+
+const GUIDES_ID = `${SITE}/guides#collection`;
+
+/**
+ * Where a guide sits, said as a list rather than left to the URL.
+ *
+ * A crawler infers the nesting from the path. An answer engine quoting one page
+ * out of context does not, and the breadcrumb is the part that survives being
+ * quoted: it names the section the page belongs to without the prose saying so.
+ */
+function breadcrumb(guide: Guide): unknown {
+  return {
+    '@type': 'BreadcrumbList',
+    '@id': `${guideUrl(guide)}#breadcrumb`,
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'agent-chaperone', item: SITE },
+      { '@type': 'ListItem', position: 2, name: 'Guides', item: `${SITE}/guides` },
+      { '@type': 'ListItem', position: 3, name: guide.h1, item: guideUrl(guide) },
+    ],
+  };
+}
+
+/**
+ * One guide.
+ *
+ * `TechArticle` rather than `Article`: each of these is a procedure with
+ * configuration in it, addressed to somebody setting the thing up, and the type
+ * says that without the prose having to. `about` points at the application node
+ * rather than restating it, so a reader that already resolved the software from
+ * the home page does not meet a second copy of it here under another id.
+ */
+export function guideSchema(guide: Guide): unknown {
+  const url = guideUrl(guide);
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      ORGANIZATION,
+      WEBSITE,
+      {
+        '@type': 'TechArticle',
+        '@id': `${url}#article`,
+        headline: guide.h1,
+        name: guide.h1,
+        description: guide.description,
+        url,
+        mainEntityOfPage: url,
+        inLanguage: 'en',
+        isPartOf: { '@id': SITE_ID },
+        about: { '@id': APP },
+        author: { '@id': ORG },
+        publisher: { '@id': ORG },
+        license: 'https://www.apache.org/licenses/LICENSE-2.0',
+        isAccessibleForFree: true,
+        // The release the page describes, not the build. A rebuild that changed
+        // nothing should not claim the page is newer than the tool it documents.
+        datePublished: RUN.date,
+        dateModified: RUN.date,
+        proficiencyLevel: 'Expert',
+        dependencies: `agent-chaperone ${CURRENT_VERSION}`,
+      },
+      breadcrumb(guide),
+      APPLICATION,
+    ],
+  };
+}
+
+/**
+ * The guides index.
+ *
+ * `CollectionPage` naming every member, so a reader that fetches this one page
+ * comes away knowing the other four exist and what each answers, rather than
+ * having to crawl the section to find out.
+ */
+export function guidesIndexSchema(): unknown {
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      ORGANIZATION,
+      WEBSITE,
+      {
+        '@type': 'CollectionPage',
+        '@id': GUIDES_ID,
+        name: 'agent-chaperone guides',
+        description:
+          "Setting up screening for MCP servers, for a client's own shell and file tools, for prompt injection arriving in tool results, and for secrets on their way out.",
+        url: `${SITE}/guides`,
+        isPartOf: { '@id': SITE_ID },
+        about: { '@id': APP },
+        inLanguage: 'en',
+        hasPart: GUIDES.map((guide) => ({
+          '@type': 'TechArticle',
+          '@id': `${guideUrl(guide)}#article`,
+          headline: guide.h1,
+          description: guide.description,
+          url: guideUrl(guide),
+        })),
       },
       APPLICATION,
     ],

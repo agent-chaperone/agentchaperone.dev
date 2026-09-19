@@ -161,6 +161,19 @@ export const SETS: readonly Set[] = [
   },
 ];
 
+/**
+ * How much of the hand-labeled set is shell, from the same run.
+ *
+ * The set leans that way on purpose: a proxy never sees a client's own shell,
+ * and that is where the damage concentrates. The denominators are the `precall`
+ * set's `items` and `positives` above, so these two are the only new numbers.
+ *
+ * Counted on `execute_command` alone. The seven `execute` rows run SQL, and a
+ * database tool reached over MCP is the case the proxy already covers, so
+ * folding them in here would inflate the one number this argument rests on.
+ */
+export const SHELL = { scored: 37, dangerous: 21 } as const;
+
 /** Observed positive rate per confidence bin, for the headline sets combined. */
 export const RELIABILITY = [
   { from: 0.0, to: 0.2, n: 530, observed: 0.111 },

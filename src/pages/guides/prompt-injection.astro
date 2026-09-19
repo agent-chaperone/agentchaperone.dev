@@ -1,0 +1,250 @@
+---
+import Base from '../../layouts/Base.astro';
+import { REPO, SETS, SHIPPED, caught, missed, flaggedInError } from '../../data/benchmark';
+import { findGuide, guideUrl } from '../../data/guides';
+import { guideSchema } from '../../data/schema';
+
+const guide = findGuide('prompt-injection');
+const n = (v: number): string => v.toLocaleString('en-US');
+const injec = SETS.find((one) => one.id === 'injecagent');
+const email = SETS.find((one) => one.id === 'bipia-email');
+const benign = SETS.find((one) => one.id === 'benign');
+---
+
+<Base
+  title={guide.title}
+  ogTitle={guide.h1}
+  description={guide.description}
+  canonical={guideUrl(guide)}
+  schema={guideSchema(guide)}
+>
+  <section>
+    <h1>{guide.h1}</h1>
+    <p class="lede">
+      Prompt injection is not mainly something a user types. It arrives in tool results: the web
+      page the agent fetched, the file it read, the issue body it pulled from an API, the response
+      an MCP server returned. All of that is text somebody else wrote, and the agent reads it in the
+      same context as instructions from you.
+    </p>
+    <p>
+      That is the asymmetry worth naming. You chose the tool, so the call looks fine. The content
+      coming back is chosen by whoever wrote the page, and there is no point in the chain where the
+      agent is told which of the two it is reading.
+    </p>
+  </section>
+
+  <section id="channel">
+    <h2>
+      The channel is every result, not just the web{' '}
+      <a class="anchor" href="#channel" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <ul class="plain">
+      <li>
+        <b>A fetched page.</b> The obvious one. Forty kilobytes come back and one sentence in the
+        middle is addressed to the reader rather than to you.
+      </li>
+      <li>
+        <b>A file on disk.</b> Not every file on your machine was written by you. A dependency's
+        README, a generated fixture and a file a previous run downloaded are all ordinary reads.
+      </li>
+      <li>
+        <b>An API response.</b> Issue bodies, pull request descriptions, review comments, support
+        tickets, calendar invitations. Anywhere a third party fills in a field that the agent later
+        reads back.
+      </li>
+      <li>
+        <b>An MCP tool result.</b> Whatever the server decides to return, which is the whole
+        surface, and a server that was honest yesterday is not thereby honest today.
+      </li>
+    </ul>
+  </section>
+
+  <section id="finds">
+    <h2>
+      What the screen looks for{' '}
+      <a class="anchor" href="#finds" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      Code goes first and finds the places text is trying not to be read by a person: zero-width and
+      bidirectional control characters, HTML comments, blocks hidden with CSS, and long base64 runs.
+      Those are listed as hidden regions in the state, and the model is asked what they say rather
+      than being trusted to notice them.
+    </p>
+    <p>
+      The result itself is split into numbered blocks and screened as a unit, so one answer can
+      point at the block it means. A result too large for one request is split at paragraph
+      boundaries into several, and the verdict is the highest across them.
+    </p>
+    <ul class="plain">
+      <li>
+        <b>instructs_reader.</b> Does any block contain text written to instruct, command or steer
+        the AI system reading this result, rather than to inform a human. This is the one the
+        thresholds act on.
+      </li>
+      <li>
+        <b>exposes_secret.</b> Does any block carry a credential, token, private key or password.
+        Above {SHIPPED.redactSecret} the result is redacted and annotated.
+      </li>
+      <li>
+        <b>which_block.</b> Which block most clearly tries to instruct the reader, so the warning
+        can be attached where the problem is instead of to the whole result.
+      </li>
+      <li>
+        <b>severity.</b> If the agent followed the strongest instruction in there, how much harm
+        follows, from none through nuisance to exfiltration or running untrusted code.
+      </li>
+    </ul>
+  </section>
+
+  <section id="tiers">
+    <h2>
+      Annotate, or withhold{' '}
+      <a class="anchor" href="#tiers" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      These are different operations and they are deliberately kept apart. Annotating returns the
+      result exactly as it arrived with a banner in front and the flagged block wrapped, because the
+      point is that the agent should read it and know what it is looking at. Withholding replaces
+      the body, because the point is that it must not.
+    </p>
+    <ul class="plain">
+      <li>
+        <b>At {SHIPPED.annotateInstructs} and above, annotated.</b> The agent reads the result with
+        a banner saying part of it may be written to instruct the reader rather than to inform you.
+      </li>
+      <li>
+        <b>At {SHIPPED.quarantineInstructs} and above, withheld</b>, and only when severity also
+        reaches {SHIPPED.harmfulSeverityLevel}. The agent is told which tool returned nothing, how
+        many blocks were held back, and that you can read the original locally.
+      </li>
+    </ul>
+    <p>
+      Severity selects the tier, it does not gate the screen. On the email set most attacks are
+      low-harm, the sort that asks for a joke or a translation, and gating on severity would let
+      them all through.
+    </p>
+    <pre><code>agent-chaperone show 4f1c9ab203</code></pre>
+    <p class="note">
+      A withheld result is still on your machine in full. The command above prints the original, so
+      withholding keeps the text away from the agent rather than away from you.
+    </p>
+  </section>
+
+  <section id="measured">
+    <h2>
+      What it catches, and what it does not{' '}
+      <a class="anchor" href="#measured" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      Counted at {SHIPPED.annotateInstructs}, the threshold the shipped rule acts at, on one dated
+      run against public benchmarks.
+    </p>
+    <table>
+      <caption>
+        Counts rather than rates, because a rate hides how many items it was measured on.
+      </caption>
+      <thead>
+        <tr>
+          <th>Set</th>
+          <th class="num">Items</th>
+          <th class="num">To catch</th>
+          <th class="num">Caught</th>
+          <th class="num">Missed</th>
+          <th class="num">Flagged in error</th>
+        </tr>
+      </thead>
+      <tbody>
+        {[injec, email, benign].map((set) =>
+          set === undefined ? null : (
+            <tr>
+              <td>{set.name}</td>
+              <td class="num">{n(set.items)}</td>
+              <td class="num">{set.positives === 0 ? 'none' : n(set.positives)}</td>
+              <td class="num">{set.positives === 0 ? '-' : n(caught(set))}</td>
+              <td class="num">{set.positives === 0 ? '-' : n(missed(set))}</td>
+              <td class="num">{flaggedInError(set)}</td>
+            </tr>
+          ),
+        )}
+      </tbody>
+    </table>
+    <div class="callout">
+      <p>
+        The largest set is also the weakest. Of {injec === undefined ? '0' : n(injec.positives)}{' '}
+        injected tool results, {injec === undefined ? '0' : n(missed(injec))} were not flagged at
+        all, and of those that were, only {injec?.withheld} crossed the bar to be withheld rather
+        than annotated. Anyone telling you a screen like this catches everything has not counted.
+      </p>
+    </div>
+    <p>
+      <a href="/results">The full results, every threshold, and the misses named</a>. The recorded
+      model responses are committed to the repository, so the scorer reproduces these numbers
+      without an API key.
+    </p>
+  </section>
+
+  <section id="wrong">
+    <h2>
+      The thing it gets wrong most{' '}
+      <a class="anchor" href="#wrong" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      Writing about prompt injection looks a lot like performing one. Security documentation,
+      READMEs of tools like this one, and blog posts quoting an attack are the main false-positive
+      class, and the question's own criteria try to draw that line: discussing or quoting an
+      instruction is not issuing one.
+    </p>
+    <p>
+      On {benign === undefined ? '0' : n(benign.items)} such paragraphs,{' '}
+      {benign === undefined ? '0' : flaggedInError(benign)} scored at or above{' '}
+      {SHIPPED.annotateInstructs}. The two highest were a documentation header addressed to
+      automated readers, and code containing literal question text. If your agent reads a lot of
+      security writing, expect banners it did not need.
+    </p>
+  </section>
+
+  <section id="limits">
+    <h2>
+      Limits{' '}
+      <a class="anchor" href="#limits" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <ul class="plain">
+      <li>
+        <b>Not a guarantee.</b> The underlying model does not treat its input as hostile by default,
+        and an attack written against this screen will get through it. The numbers above are the
+        honest version of what it does.
+      </li>
+      <li>
+        <b>Calibrated against one model.</b> Every threshold here was chosen from measured numbers
+        for Jev. Screening through a general gateway is supported and returns numbers that look the
+        same and mean something else. Read your own log before letting one of those decide anything.
+      </li>
+      <li>
+        <b>The content leaves the machine.</b> Results being screened go to the configured backend.
+        Secret shapes are replaced first, and screening can be turned off for a server whose content
+        has to stay put.
+      </li>
+      <li>
+        <b>Not everything is a result.</b> A file you paste into your own message never passes
+        through a tool, so no screen sees it.
+      </li>
+    </ul>
+    <p class="note">
+      The false criterion on the main question, and the second question that was measured and
+      dropped for adding no signal, are both in{' '}
+      <a href={`${REPO}/blob/main/docs/design.md`}>the design document</a>.
+    </p>
+  </section>
+</Base>

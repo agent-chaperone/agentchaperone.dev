@@ -1,0 +1,278 @@
+---
+import Base from '../../layouts/Base.astro';
+import { REPO, SHIPPED } from '../../data/benchmark';
+import { findGuide, guideUrl } from '../../data/guides';
+import { guideSchema } from '../../data/schema';
+
+const guide = findGuide('mcp-security');
+---
+
+<Base
+  title={guide.title}
+  ogTitle={guide.h1}
+  description={guide.description}
+  canonical={guideUrl(guide)}
+  schema={guideSchema(guide)}
+>
+  <section>
+    <h1>{guide.h1}</h1>
+    <p class="lede">
+      An MCP server is a process your agent can ask to do things, and the client decides which
+      requests to send it. agent-chaperone puts a screen on that wire. It reads each tool call
+      before the server sees it, and each result before the agent does, using the same policy file
+      and the same log for both directions.
+    </p>
+    <p>
+      Nothing about the server changes, and nothing about the client changes except one line of
+      configuration. Everything that is not a tool call, a tool result or a resource read passes
+      through untouched, including the tool list.
+    </p>
+  </section>
+
+  <section id="wrap">
+    <h2>
+      Put a server behind it{' '}
+      <a class="anchor" href="#wrap" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      For a server that runs as a local process, put <code>agent-chaperone</code> in front of the
+      command that was already there. Everything after <code>--</code> is the server that would have
+      run anyway.
+    </p>
+    <pre><code>{`{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "agent-chaperone", "--",
+               "npx", "-y", "@modelcontextprotocol/server-filesystem", "."]
+    }
+  }
+}`}</code></pre>
+    <p>
+      For a server that answers over Streamable HTTP somewhere else, give it the URL instead. The
+      proxy still speaks stdio to the client, so the client does not know the difference.
+    </p>
+    <pre><code>{`{
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "agent-chaperone", "--", "https://api.githubcopilot.com/mcp/"]
+    }
+  }
+}`}</code></pre>
+    <p>
+      To do that to a configuration file you already have, <code>agent-chaperone wrap</code> makes
+      the edit for you. Give it the path to the client's configuration file, such as Claude Code's{' '}
+      <code>~/.claude.json</code>. It prints what it would change and writes nothing until you add{' '}
+      <code>--write</code>, and it keeps the original beside the file, because a client will not
+      start without this file and a bad edit breaks every server at once. <code>--unwrap</code>{' '}
+      takes it back out, and running either twice changes nothing.
+    </p>
+    <pre><code>agent-chaperone wrap ~/.claude.json
+agent-chaperone wrap ~/.claude.json --write</code></pre>
+    <p class="note">
+      Screening needs an API key for the model backend. Without one the proxy still starts and the
+      deterministic rules still run, and every judgment records that no model was asked. It never
+      refuses to start because a key is missing.
+    </p>
+  </section>
+
+  <section id="crosses">
+    <h2>
+      What crosses the proxy{' '}
+      <a class="anchor" href="#crosses" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <ul class="plain">
+      <li>
+        <b>tools/call, on the way out.</b> The pre-call screen reads the tool name and the
+        arguments, with secret shapes already replaced, and decides whether to forward or hold.
+      </li>
+      <li>
+        <b>The result, on the way back.</b> The post-result screen reads what came back and decides
+        whether the agent sees it as it arrived, with a warning attached, or not at all.
+      </li>
+      <li>
+        <b>resources/read.</b> Screened as a result, because a resource body is text from the same
+        place a result comes from.
+      </li>
+      <li>
+        <b>tools/list.</b> Compared against the list that server first sent, so a description that
+        was rewritten after you trusted it is reported. The list itself is never withheld.
+      </li>
+    </ul>
+    <p>
+      Requests and responses are paired by their JSON-RPC id, so a result is screened together with
+      the arguments that produced it rather than on its own.
+    </p>
+  </section>
+
+  <section id="precall">
+    <h2>
+      What the pre-call screen asks{' '}
+      <a class="anchor" href="#precall" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      Deterministic rules run first and can settle the call without asking a model anything. Those
+      are the per-server allow and deny lists, the MCP annotations a server attaches to its own
+      tools, regexes for obviously dangerous shell forms, and regexes for secret-shaped strings,
+      which are replaced with a placeholder before anything is sent anywhere.
+    </p>
+    <p>What survives that goes out as one request carrying independent questions.</p>
+    <ul class="plain">
+      <li>
+        <b>destructive.</b> Would running this delete, overwrite or irreversibly change data, files,
+        records, infrastructure or account state. Held at {SHIPPED.holdDestructive}.
+      </li>
+      <li>
+        <b>exfiltration.</b> Do the arguments send local file contents, environment variables,
+        credentials or private records to an external destination. Held at{' '}
+        {SHIPPED.holdExfiltration}, and tested before the destructive arm.
+      </li>
+      <li>
+        <b>secret_in_args.</b> Do the arguments carry a credential. This runs after the regexes, so
+        it is the backstop for a shape they did not match.
+      </li>
+      <li>
+        <b>policy_violation.</b> Does the call do something the policy prose forbids. Only sent when
+        a policy is written, and not covered by the published numbers.
+      </li>
+      <li>
+        <b>off_task.</b> Is the call unrelated to the task you recorded. Only sent when a task
+        exists, held at a deliberately high threshold, and not covered by the published numbers
+        either.
+      </li>
+      <li>
+        <b>severity.</b> How much damage the call could do, from a read with no side effects to
+        irreversible loss. This does not gate anything. It labels the hold, and a hold resting on a
+        low-confidence severity is labelled uncertain rather than stated flatly.
+      </li>
+    </ul>
+    <p>
+      The decision is code, first match wins: a deny list hit blocks, an allow list that does not
+      name the tool blocks, then exfiltration or a secret in the arguments, then a destructive
+      change, then the policy, then the task. Anything left over is forwarded.
+    </p>
+    <p>
+      The exact wording of every question is in{' '}
+      <a href={`${REPO}/blob/main/docs/design.md`}>the design document</a>, because a screen whose
+      questions you cannot read is asking you to trust a summary of them.
+    </p>
+  </section>
+
+  <section id="result">
+    <h2>
+      What comes back is screened too{' '}
+      <a class="anchor" href="#result" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      A tool result is text somebody else wrote, and the agent reads it as input. The post-result
+      screen looks for hidden regions first, which is zero-width and bidirectional characters, HTML
+      comments, hidden blocks and base64 runs, then asks whether any part of the result is written
+      to instruct the reader rather than to inform it. At {SHIPPED.annotateInstructs} the result is
+      annotated and the agent still reads it. At {SHIPPED.quarantineInstructs}, and only when the
+      harm judgment also reaches {SHIPPED.harmfulSeverityLevel}, it is withheld.
+    </p>
+    <p>
+      <a href="/guides/prompt-injection">That half has its own guide</a>, with the measured counts
+      for what it catches and misses.
+    </p>
+  </section>
+
+  <section id="shadow">
+    <h2>
+      Run it in shadow first{' '}
+      <a class="anchor" href="#shadow" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      Shadow is the default, and it blocks nothing. Every judgment is written to a local log with
+      the probabilities that produced it, and the entries marked as would-have are exactly the list
+      of things that change if you switch.
+    </p>
+    <pre><code>agent-chaperone report</code></pre>
+    <p>
+      That leads with the count of decisions enforcement would have stopped and did not. If you
+      disagree with a line, move the threshold rather than the mode, and you do not have to guess at
+      the new number: <code>replay</code> decides again over judgments already recorded, under a
+      policy you are considering, and says which way each one moves. No model is asked twice.
+    </p>
+    <pre><code>agent-chaperone replay --policy candidate.yaml</code></pre>
+    <p>
+      When the log stops surprising you, set <code>mode: enforce</code> in the policy file. In
+      enforce a held call does not run, and the agent is handed a message saying a person is
+      deciding, along with a token that names that one call. Approving a write to one path does not
+      release a write to another, and the token expires.
+    </p>
+  </section>
+
+  <section id="cannot">
+    <h2>
+      What a proxy cannot see{' '}
+      <a class="anchor" href="#cannot" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p class="lede">Read this part before deciding the configuration above covers you.</p>
+    <ul class="plain">
+      <li>
+        <b>The client's own tools.</b> A proxy sees MCP traffic. It does not see the shell commands,
+        file edits and web fetches a client runs itself, and on the clients people actually use
+        those are where most of the damage lives.{' '}
+        <a href="/guides/claude-code">Hooks cover that separately</a>.
+      </li>
+      <li>
+        <b>What a server does rather than what it said it would.</b> This is not a sandbox. It reads
+        the call. A server that accepts a harmless-looking call and then does something else is
+        outside it entirely, and OS-level isolation is what covers that. The two belong together.
+      </li>
+      <li>
+        <b>Anything the annotations claim on their own.</b> A server describes its own tools, so its
+        annotations are hints to the policy engine rather than a bypass. The MCP specification says
+        to treat them as untrusted unless the server is trusted, and that is how they are treated.
+      </li>
+      <li>
+        <b>Content that never leaves as a tool call.</b> A file you paste into your own message
+        reaches the model without any tool running, so nothing here sees it and nothing records it.
+      </li>
+    </ul>
+    <p class="note">
+      One more thing worth knowing before turning this on: the arguments and results being screened
+      go to the configured model backend, so that content leaves the machine. Secret-shaped strings
+      are replaced first, and <code>screen_results: false</code> turns screening off for a server
+      whose content has to stay put.
+    </p>
+  </section>
+
+  <section id="next">
+    <h2>
+      Next{' '}
+      <a class="anchor" href="#next" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <ul class="plain">
+      <li>
+        <a href="/results">The measured results</a>, including every threshold and the misses named.
+      </li>
+      <li>
+        <a href="/guides/secret-exfiltration">
+          Why a tool allow-list does not catch a secret leaving
+        </a>
+        .
+      </li>
+      <li>
+        <a href={`${REPO}/blob/main/docs/design.md`}>The design document</a>, for the exact wording
+        of every question and the full policy file.
+      </li>
+    </ul>
+  </section>
+</Base>
