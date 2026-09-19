@@ -26,8 +26,40 @@ const HOST = 'agentchaperone.dev';
 const KEY = '13a43bd0c536446eaca1c087990db4fa';
 const ENDPOINT = 'https://api.indexnow.org/indexnow';
 
-/** Everything worth announcing. The markdown twins are the same content. */
-const URLS = [`https://${HOST}/`, `https://${HOST}/results`];
+/**
+ * Everything worth announcing. The markdown twin of a page is the same content
+ * under another extension, so it is not submitted beside the page.
+ */
+const URLS = [
+  `https://${HOST}/`,
+  `https://${HOST}/results`,
+  `https://${HOST}/guides`,
+  `https://${HOST}/guides/mcp-security`,
+  `https://${HOST}/guides/prompt-injection`,
+  `https://${HOST}/guides/claude-code`,
+  `https://${HOST}/guides/secret-exfiltration`,
+];
+
+/**
+ * Pages the deployed sitemap lists and this file does not.
+ *
+ * The sitemap is generated from the pages, so it is the one list that cannot
+ * fall behind them. A hand-maintained list beside it will fall behind at the
+ * first new page, and the failure is invisible: the submission succeeds, and
+ * the page nobody listed is simply never announced.
+ */
+async function unlisted() {
+  const response = await fetch(`https://${HOST}/sitemap-0.xml`).catch(() => undefined);
+  if (response === undefined || !response.ok) {
+    console.error('Could not read the sitemap, so the list below was not cross-checked.');
+    return [];
+  }
+  const bare = (url) => url.replace(/\/$/, '');
+  const known = new Set(URLS.map(bare));
+  return [...(await response.text()).matchAll(/<loc>([^<]+)<\/loc>/g)]
+    .map((found) => found[1])
+    .filter((url) => !known.has(bare(url)));
+}
 
 async function main() {
   const dryRun = process.argv.includes('--dry-run');
@@ -44,6 +76,16 @@ async function main() {
   const served = (await hosted.text()).trim();
   if (served !== KEY) {
     console.error(`${keyLocation} does not contain the key it should.`);
+    process.exit(1);
+  }
+
+  const missing = await unlisted();
+  if (missing.length > 0) {
+    console.error('The sitemap lists pages this script does not submit:');
+    for (const one of missing) {
+      console.error(`  ${one}`);
+    }
+    console.error('Add them to URLS in this file, or they never get announced.');
     process.exit(1);
   }
 

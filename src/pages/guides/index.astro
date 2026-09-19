@@ -1,0 +1,86 @@
+---
+import Base from '../../layouts/Base.astro';
+import { REPO } from '../../data/benchmark';
+import { GUIDES } from '../../data/guides';
+import { guidesIndexSchema } from '../../data/schema';
+
+const title = 'Guides | agent-chaperone';
+const description =
+  'Setting up screening for MCP servers, for a client’s own shell and file tools, for prompt injection arriving in tool results, and for secrets on their way out.';
+---
+
+<Base
+  title={title}
+  ogTitle="Guides"
+  description={description}
+  canonical="https://agentchaperone.dev/guides"
+  schema={guidesIndexSchema()}
+>
+  <section>
+    <h1>Guides</h1>
+    <p class="lede">
+      Four things people set this up to do. Each one says what it covers, what the configuration
+      looks like, and where it stops, which is the part most of this kind of writing leaves out.
+    </p>
+    <p>
+      They assume the package is installed and describe the current release. If you want the
+      architecture rather than the setup, that lives in{' '}
+      <a href={`${REPO}/blob/main/docs/design.md`}>the design document</a>.
+    </p>
+    <pre><code>npm install -g agent-chaperone</code></pre>
+  </section>
+
+  <section id="all">
+    <h2>
+      The guides{' '}
+      <a class="anchor" href="#all" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <ul class="plain">
+      {GUIDES.map((one) => (
+        <li>
+          <b>
+            <a href={`/guides/${one.slug}`}>{one.h1}</a>
+          </b>
+          <p>{one.blurb}</p>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section id="elsewhere">
+    <h2>
+      Everything else{' '}
+      <a class="anchor" href="#elsewhere" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <ul class="plain">
+      <li>
+        <b>
+          <a href="/results">Measured results</a>
+        </b>
+        <p>
+          One dated run against public prompt-injection benchmarks and hand-labeled tool calls, with
+          every threshold, what was caught, what was missed and what was flagged in error.
+        </p>
+      </li>
+      <li>
+        <b>
+          <a href={`${REPO}/blob/main/docs/design.md`}>Design</a>
+        </b>
+        <p>
+          The architecture, the exact wording of every screening question, the policy file and the
+          audit log format.
+        </p>
+      </li>
+      <li>
+        <b>
+          <a href={`${REPO}/tree/main/docs/adr`}>Decision records</a>
+        </b>
+        <p>Why the main choices went the way they did, including the ones that were reversed.</p>
+      </li>
+    </ul>
+  </section>
+</Base>

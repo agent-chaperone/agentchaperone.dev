@@ -52,25 +52,30 @@ jobs:
       - name: The markdown twins are real
         # Generated from the built HTML, so they cannot drift from the pages.
         # What they can do is come out empty if the conversion breaks, and an
-        # empty twin tells a reader the page says almost nothing.
+        # empty twin tells a reader the page says almost nothing. Derived from
+        # what was built rather than from a list of page names, because a list
+        # here would pass while a whole new section shipped with no twin at all.
         run: |
-          for page in index results; do
-            file="dist/$page.md"
+          bad=0
+          for page in $(find dist -name '*.html' ! -name '404.html' | sort); do
+            file="${page%.html}.md"
             if [ ! -f "$file" ]; then
-              echo "$file is missing, so the build did not produce a twin." >&2
-              exit 1
+              echo "$page has no twin at $file." >&2
+              bad=1
+              continue
             fi
             if [ "$(wc -c < "$file")" -lt 1000 ]; then
               echo "$file is too small to be the page it claims to be." >&2
-              exit 1
+              bad=1
             fi
             if grep -qE '</[a-z]+>' "$file"; then
               echo "$file still carries HTML tags, so the conversion is wrong:" >&2
               grep -nE '</[a-z]+>' "$file" | head -3 >&2
-              exit 1
+              bad=1
             fi
           done
-          echo "Both twins are present and readable."
+          [ "$bad" -eq 0 ] || exit 1
+          echo "Every built page has a twin, and every twin is readable."
 
       - name: No client JavaScript ships
         # The site's Content-Security-Policy says script-src 'none'. If a build

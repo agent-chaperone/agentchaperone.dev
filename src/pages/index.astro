@@ -9,10 +9,10 @@ const injec = SETS.find((one) => one.id === 'injecagent');
 // The tab title names the category, because it is the one string every
 // citation carries and a bare product name says nothing about what the page
 // answers. The card keeps the plain name: og:site_name already brands it.
-const title = 'agent-chaperone: screening for AI agent tool calls';
+const title = 'agent-chaperone: runtime security for AI agent tool calls';
 const ogTitle = 'agent-chaperone';
 const description =
-  'Screening for AI agent tool calls and for the results they return. It starts in shadow mode and blocks nothing, so the decision to switch rests on your own log.';
+  'Open-source runtime security for AI agents. Screen MCP and built-in tool calls before execution, and tool results for prompt injection before the agent reads them.';
 ---
 
 <Base
@@ -25,10 +25,16 @@ const description =
   <section>
     <h1>Screening for agent tool calls, and for what comes back.</h1>
     <p class="lede">
-      agent-chaperone sits between an AI agent and its tools. It screens a call before it runs, and
-      a result before the agent reads it. Every judgment comes back as a probability, every
-      threshold is a number in a policy file rather than a prompt, and every decision is written to
-      a local log with the numbers that produced it.
+      agent-chaperone is an open-source runtime security layer for AI agents. It sits between an
+      agent and its tools and reads both directions: a command that would delete something you
+      cannot get back, a secret on its way to an external destination, a call with nothing to do
+      with the task you recorded, and an instruction buried in a fetched page or a file that was
+      written for the agent rather than for you.
+    </p>
+    <p>
+      Every judgment comes back as a probability, every threshold is a number in a policy file
+      rather than a prompt, and every decision is written to a local log with the numbers that
+      produced it.
     </p>
     <p>
       It starts in shadow mode, which blocks nothing. The log shows what it would have held, so the
@@ -123,7 +129,8 @@ const description =
       You should, and this has allow and deny lists built in. They run first, deterministically,
       with no model involved. The limit is that a list names tools rather than what a call does with
       them: <code>write_file</code> is on your list either way, whether the path is{' '}
-      <code>src/auth.ts</code> or <code>~/.ssh/authorized_keys</code>.
+      <code>src/auth.ts</code> or <code>~/.ssh/authorized_keys</code>.{' '}
+      <a href="/guides/secret-exfiltration">Why that gap is where secrets leave</a>.
     </p>
 
     <h3>Why not read the tool calls yourself?</h3>
@@ -138,7 +145,8 @@ const description =
     <p>
       That is half of it. A classifier reads results. This also screens calls before they run, which
       is the half that catches a destructive command or a secret heading somewhere it should not,
-      neither of which is prompt injection. The numbers below cover both directions separately.
+      neither of which is prompt injection. The numbers below cover both directions separately, and{' '}
+      <a href="/guides/prompt-injection">the result side has its own guide</a>.
     </p>
   </section>
 
@@ -164,6 +172,10 @@ const description =
     }
   }
 }`}</code></pre>
+    <p class="note">
+      The HTTP form, what each screen asks, and where a proxy stops seeing anything:{' '}
+      <a href="/guides/mcp-security">screening MCP tool calls</a>.
+    </p>
     <p>
       The second exists because a proxy sees MCP traffic and nothing else. It does not see the
       shell, the file edits or the web fetches a client runs itself, and on the clients people
@@ -173,8 +185,9 @@ const description =
     <pre><code>agent-chaperone hook pre     # before the client runs a tool
 agent-chaperone hook post    # after it returns, before the model reads it</code></pre>
     <p class="note">
-      The exact hook entries are in <a href={`${REPO}/blob/main/docs/hooks.md`}>the hooks guide</a>,
-      which also says what the hooks do not see.
+      The worked configuration is in{' '}
+      <a href="/guides/claude-code">the guide to screening Claude Code's built-in tools</a>, which
+      also says what the hooks do not see.
     </p>
   </section>
 
@@ -281,6 +294,7 @@ agent-chaperone hook post    # after it returns, before the model reads it</code
       <thead>
         <tr>
           <th>Set</th>
+          <th class="num">Threshold</th>
           <th class="num">Items</th>
           <th class="num">To catch</th>
           <th class="num">Caught</th>
