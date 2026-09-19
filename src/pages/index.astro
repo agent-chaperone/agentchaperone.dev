@@ -1,16 +1,27 @@
 ---
 import Base from '../layouts/Base.astro';
 import { RUN, SETS, SHIPPED, REPO, caught, missed, flaggedInError } from '../data/benchmark';
+import { homeSchema } from '../data/schema';
 
 const headline = SETS.filter((one) => one.headline);
 const n = (v: number): string => v.toLocaleString('en-US');
 const injec = SETS.find((one) => one.id === 'injecagent');
-const title = 'agent-chaperone';
+// The tab title names the category, because it is the one string every
+// citation carries and a bare product name says nothing about what the page
+// answers. The card keeps the plain name: og:site_name already brands it.
+const title = 'agent-chaperone: screening for AI agent tool calls';
+const ogTitle = 'agent-chaperone';
 const description =
   'Screening for AI agent tool calls and for the results they return. It starts in shadow mode and blocks nothing, so the decision to switch rests on your own log.';
 ---
 
-<Base title={title} description={description} canonical="https://agentchaperone.dev/">
+<Base
+  title={title}
+  ogTitle={ogTitle}
+  description={description}
+  canonical="https://agentchaperone.dev/"
+  schema={homeSchema()}
+>
   <section>
     <h1>Screening for agent tool calls, and for what comes back.</h1>
     <p class="lede">

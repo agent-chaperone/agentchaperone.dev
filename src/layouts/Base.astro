@@ -5,10 +5,19 @@ interface Props {
   readonly title: string;
   readonly description: string;
   readonly canonical: string;
+  /** When the tab title has to carry the category and the card should not repeat it. */
+  readonly ogTitle?: string;
+  /** JSON-LD for this page, as one graph. Never a second script tag. */
+  readonly schema?: unknown;
+  /** Serialised, because `noindex` is right for exactly one page here. */
+  readonly robots?: string;
 }
 
-const { title, description, canonical } = Astro.props;
+const { title, description, canonical, ogTitle, schema, robots } = Astro.props;
 const year = new Date().getFullYear();
+// Every page is prose that changes when the tool does, so the date a reader
+// should weigh is the date of the release it describes, not the build.
+const updated = RUN.date;
 ---
 
 <!doctype html>
@@ -20,13 +29,37 @@ const year = new Date().getFullYear();
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content={title} />
+    <meta property="og:site_name" content="agent-chaperone" />
+    <meta property="og:title" content={ogTitle ?? title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content="https://agentchaperone.dev/og.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="agent-chaperone: screening for AI agent tool calls and results"
+    />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="robots"
+      content={robots ?? 'index, follow, max-image-preview:large, max-snippet:-1'}
+    />
+    <meta name="author" content="Sepehr Safari" />
+    {/* A raster icon as well as the vector one: Google Search ignores an SVG-only
+    favicon, and so does Safari before 26. */}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.png" type="image/png" sizes="180x180" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#0c0d10" />
     <meta name="color-scheme" content="dark light" />
+    {schema === undefined ? null : (
+      <script
+        type="application/ld+json"
+        set:html={JSON.stringify(schema)}
+      />
+    )}
   </head>
   <body>
     <a class="skip" href="#main">

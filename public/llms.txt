@@ -1,0 +1,25 @@
+# agent-chaperone
+
+> agent-chaperone is an open-source npm package that screens an AI agent's tool calls before they run, and the tool results those calls return before the agent reads them. It covers MCP servers through a transparent proxy, and a client's own shell commands, file edits and web fetches through a hooks adapter.
+
+Every judgment comes back as a probability rather than a verdict. Thresholds live in a policy file rather than in a prompt, and every decision is written to a local log with the numbers that produced it. It starts in shadow mode, which blocks nothing, so the decision to enforce rests on a log the user has read.
+
+- Install: `npm install -g agent-chaperone`
+- Licence: Apache-2.0
+- Source: https://github.com/agent-chaperone/agent-chaperone
+- Registry: https://www.npmjs.com/package/agent-chaperone
+- What it is not: a sandbox. It sees what a call says it will do and cannot stop a server doing something the call did not describe.
+- What leaves the machine: the arguments and results being screened go to the configured model backend. Secret-shaped strings are replaced first, and screening can be turned off per server.
+
+## Docs
+
+- [README](https://raw.githubusercontent.com/agent-chaperone/agent-chaperone/main/README.md): install, the two screens, the commands, and the measured results
+- [Design](https://raw.githubusercontent.com/agent-chaperone/agent-chaperone/main/docs/design.md): architecture, every screening question and its exact wording, the policy file, the audit log
+- [Hooks](https://raw.githubusercontent.com/agent-chaperone/agent-chaperone/main/docs/hooks.md): screening a client's own tools, what each hook command answers, and what hooks cannot see
+- [Roadmap](https://raw.githubusercontent.com/agent-chaperone/agent-chaperone/main/ROADMAP.md): what each version shipped
+
+## Measured
+
+- [Results](https://agentchaperone.dev/results): one run of jev-1.13.0 against agent-chaperone 0.1.0 on 2026-09-19, with what was caught, what was missed, and what was flagged in error
+
+Three questions the tool asks are outside those numbers, and the pages say so where they appear: `policy_violation` and `off_task` are only sent when a policy or a task is configured, and `description_steers` asks about a tool description, which no set in the benchmark covers.

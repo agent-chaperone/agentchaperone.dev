@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import { RUN, SETS, SHIPPED, RELIABILITY, REPO } from '../data/benchmark';
+import { resultsSchema } from '../data/schema';
 
 const pct = (v: number | null): string => (v === null ? '-' : v.toFixed(3));
 const n = (v: number): string => v.toLocaleString('en-US');
@@ -8,7 +9,12 @@ const title = 'Measured results | agent-chaperone';
 const description = `One run of ${RUN.model} on ${RUN.date}: what the screening questions caught, what they missed, and what they flagged in error.`;
 ---
 
-<Base title={title} description={description} canonical="https://agentchaperone.dev/results">
+<Base
+  title={title}
+  description={description}
+  canonical="https://agentchaperone.dev/results"
+  schema={resultsSchema()}
+>
   <section>
     <h1>Measured results</h1>
     <p class="lede">
