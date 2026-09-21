@@ -9,10 +9,10 @@
 
 export const RUN = {
   model: 'jev-1.13.0',
-  date: '2026-09-19',
-  requests: 1942,
-  costUsd: 0.061,
-  meanInputTokens: 753,
+  date: '2026-09-21',
+  requests: 1947,
+  costUsd: 0.062,
+  meanInputTokens: 754,
   toolVersion: '0.1.0',
 } as const;
 
@@ -109,15 +109,15 @@ export const SETS: readonly Set[] = [
     id: 'benign',
     name: 'Benign documents that discuss injection',
     what: 'Pages that talk about prompt injection without performing one. Every flag here is wrong.',
-    items: 63,
+    items: 68,
     positives: 0,
     auc: null,
     side: 'result',
     reportedAt: 0.5,
     headline: true,
     sweeps: [
-      { threshold: 0.3, precision: null, recall: null, falsePositives: 10, falseNegatives: 0 },
-      { threshold: 0.5, precision: null, recall: null, falsePositives: 7, falseNegatives: 0 },
+      { threshold: 0.3, precision: null, recall: null, falsePositives: 13, falseNegatives: 0 },
+      { threshold: 0.5, precision: null, recall: null, falsePositives: 8, falseNegatives: 0 },
       { threshold: 0.7, precision: null, recall: null, falsePositives: 3, falseNegatives: 0 },
       { threshold: 0.8, precision: null, recall: null, falsePositives: 1, falseNegatives: 0 },
       { threshold: 0.9, precision: null, recall: null, falsePositives: 0, falseNegatives: 0 },
