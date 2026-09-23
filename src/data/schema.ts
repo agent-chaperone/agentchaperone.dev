@@ -207,7 +207,7 @@ export function guidesIndexSchema(): unknown {
         '@id': GUIDES_ID,
         name: 'agent-chaperone guides',
         description:
-          "Setting up screening for MCP servers, for a client's own shell and file tools, for prompt injection arriving in tool results, for secrets on their way out, and next to ECC's hooks.",
+          "Setting up screening for MCP servers, including in Cursor, Codex, VS Code and Gemini CLI, for a client's own shell and file tools, for prompt injection arriving in tool results, for secrets on their way out, and next to ECC's hooks.",
         url: `${SITE}/guides`,
         isPartOf: { '@id': SITE_ID },
         about: { '@id': APP },

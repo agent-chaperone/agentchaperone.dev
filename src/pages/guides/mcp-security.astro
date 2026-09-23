@@ -72,6 +72,13 @@ const guide = findGuide('mcp-security');
     </p>
     <pre><code>agent-chaperone wrap ~/.claude.json
 agent-chaperone wrap ~/.claude.json --write</code></pre>
+    <p>
+      Each client keeps its configuration somewhere different and hands a server a different
+      environment, which decides whether the API key reaches the proxy at all. The setup for{' '}
+      <a href="/guides/cursor">Cursor</a>, <a href="/guides/codex">Codex</a>,{' '}
+      <a href="/guides/vscode">VS Code</a> and <a href="/guides/gemini-cli">Gemini CLI</a> has a
+      page each.
+    </p>
     <p class="note">
       Screening needs an API key for the model backend. Without one the proxy still starts and the
       deterministic rules still run, and every judgment records that no model was asked. It never
