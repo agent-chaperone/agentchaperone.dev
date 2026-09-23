@@ -1,0 +1,191 @@
+---
+import Base from '../../layouts/Base.astro';
+import { REPO } from '../../data/benchmark';
+import { findGuide, guideUrl } from '../../data/guides';
+import { guideSchema } from '../../data/schema';
+
+const guide = findGuide('vscode');
+---
+
+<Base
+  title={guide.title}
+  ogTitle={guide.h1}
+  description={guide.description}
+  canonical={guideUrl(guide)}
+  schema={guideSchema(guide)}
+>
+  <section>
+    <h1>{guide.h1}</h1>
+    <p class="lede">
+      VS Code starts each MCP server you configure for agent mode as a local process and talks to it
+      over stdio. agent-chaperone goes in front of that process. It reads each tool call before the
+      server gets it and each result before the agent does, and nothing about the server changes.
+    </p>
+    <p>
+      This covers MCP servers only. The terminal commands and file edits the agent runs through VS
+      Code's own tools do not go through MCP, so the proxy does not see them.
+    </p>
+  </section>
+
+  <section id="install">
+    <h2>
+      Install it{' '}
+      <a class="anchor" href="#install" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <pre><code>npm install -g agent-chaperone</code></pre>
+    <p>
+      A global install means VS Code starts the proxy directly. Running it through <code>npx</code>{' '}
+      works too, but adds a package lookup every time a server starts.
+    </p>
+  </section>
+
+  <section id="wrap">
+    <h2>
+      Put a server behind it{' '}
+      <a class="anchor" href="#wrap" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      VS Code reads servers from <code>.vscode/mcp.json</code> in a workspace and from the{' '}
+      <code>mcp.json</code> in your user profile, which <b>MCP: Open User Configuration</b> opens.
+      Both list servers under <code>servers</code>, not <code>mcpServers</code>. A server before and
+      after:
+    </p>
+    <pre><code>{`{
+  "servers": {
+    "filesystem": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "\${workspaceFolder}"]
+    }
+  }
+}`}</code></pre>
+    <pre><code>{`{
+  "servers": {
+    "filesystem": {
+      "type": "stdio",
+      "command": "agent-chaperone",
+      "args": ["--server", "filesystem", "--",
+               "npx", "-y", "@modelcontextprotocol/server-filesystem", "\${workspaceFolder}"]
+    }
+  }
+}`}</code></pre>
+    <p>
+      Everything after <code>--</code> is the server that would have run anyway, and VS Code still
+      fills in variables like <code>{'${workspaceFolder}'}</code> before it starts anything.{' '}
+      <code>--server</code> names the section of the policy file that applies.
+    </p>
+    <p>
+      <code>agent-chaperone wrap</code> can make the edit, with two limits on VS Code. It reads the
+      file as strict JSON, and VS Code allows comments in <code>mcp.json</code>, so a file with
+      comments is refused with an error and left untouched. And it wraps every server in the file,
+      so use it on a file whose servers all run a local command. Otherwise edit the entry by hand as
+      above.
+    </p>
+    <pre><code>agent-chaperone wrap .vscode/mcp.json
+agent-chaperone wrap .vscode/mcp.json --write</code></pre>
+    <p>A new server can also be added from the command line, straight into your user profile:</p>
+    <pre><code>{`code --add-mcp '{"name":"filesystem","command":"agent-chaperone","args":["--server","filesystem","--","npx","-y","@modelcontextprotocol/server-filesystem","/Users/me/project"]}'`}</code></pre>
+  </section>
+
+  <section id="key">
+    <h2>
+      Give it the API key{' '}
+      <a class="anchor" href="#key" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      The model screens need <code>TYPESAFE_API_KEY</code>. A server started by VS Code gets VS
+      Code's own environment, and on macOS VS Code reads your shell profile when it starts,
+      including when it is opened from the Dock. A key exported in <code>.zshrc</code> or{' '}
+      <code>.bashrc</code> reaches the proxy once VS Code has been restarted. If VS Code shows an
+      error about resolving your shell environment, starting it with <code>code .</code> from a
+      terminal avoids the problem.
+    </p>
+    <p>
+      To keep the key out of your shell profile, point the entry at a file of{' '}
+      <code>NAME=value</code> lines with <code>envFile</code>:
+    </p>
+    <pre><code>{`"filesystem": {
+  "type": "stdio",
+  "command": "agent-chaperone",
+  "args": ["--server", "filesystem", "--", "npx", "-y", "@modelcontextprotocol/server-filesystem", "\${workspaceFolder}"],
+  "envFile": "/Users/me/.config/agent-chaperone/env"
+}`}</code></pre>
+    <p>
+      The proxy removes its own keys before it starts the server behind it, so the server never
+      receives <code>TYPESAFE_API_KEY</code> either way.
+    </p>
+    <p class="note">
+      Without a key the proxy still starts, the deterministic rules still run, and every judgment
+      records that no model was asked. It never refuses to start because a key is missing.
+    </p>
+  </section>
+
+  <section id="check">
+    <h2>
+      Check that it is working{' '}
+      <a class="anchor" href="#check" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      A server in <code>.vscode/mcp.json</code> only starts in a trusted workspace. Run{' '}
+      <b>MCP: List Servers</b>, pick the server, and <b>Show Output</b> has what the process
+      printed, including a line from the proxy if it started without a key.
+    </p>
+    <p>Then use the server once from agent mode and read what was decided:</p>
+    <pre><code>agent-chaperone log</code></pre>
+    <p>
+      Each line is one call or result, with the decision and, in shadow mode, what enforcing would
+      have done instead. A line ending in <code>[not screened]</code> was decided without a model,
+      which means the key did not arrive.
+    </p>
+  </section>
+
+  <section id="cannot">
+    <h2>
+      What this does not cover{' '}
+      <a class="anchor" href="#cannot" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <ul class="plain">
+      <li>
+        <b>VS Code's own tools.</b> Terminal commands and file edits the agent makes through VS
+        Code's built-in tools never cross an MCP connection. VS Code has agent hooks in preview, and
+        an adapter for them <a href={`${REPO}/issues/78`}>does not exist yet</a>.
+      </li>
+      <li>
+        <b>A server VS Code reaches by URL.</b> Put it behind the proxy by hand, as{' '}
+        <a href="/guides/mcp-security#wrap">the MCP guide</a> shows, with <code>type</code> set to{' '}
+        <code>stdio</code>, since the entry now runs a command. Pass any token it needs with{' '}
+        <code>--header-env</code>: headers written in the VS Code entry never reach the proxy.
+      </li>
+      <li>
+        <b>What a server does rather than what the call says.</b> This is not a sandbox. It reads
+        the call and the result, and a server that does something its arguments did not describe is
+        outside it.
+      </li>
+    </ul>
+  </section>
+
+  <section id="next">
+    <h2>
+      Next{' '}
+      <a class="anchor" href="#next" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      It starts in shadow mode, which blocks nothing.{' '}
+      <a href="/guides/mcp-security">The MCP guide</a> covers what each screen asks, how to read a
+      shadow-mode log, and when to switch to enforce. The exact wording of every question is in{' '}
+      <a href="/docs/design">the design document</a>.
+    </p>
+  </section>
+</Base>

@@ -66,6 +66,42 @@ export const GUIDES: readonly Guide[] = [
     blurb:
       "ECC checks your setup and makes the agent look before it edits. This checks what each call does and what each result says, and runs next to ECC's hooks without changing them.",
   },
+  {
+    slug: 'cursor',
+    h1: 'Screen MCP tool calls in Cursor',
+    title: 'Screen MCP tool calls in Cursor | agent-chaperone',
+    description:
+      "Put Cursor's MCP servers behind agent-chaperone: the mcp.json change, getting the API key to the proxy, checking it works, and what it does not cover.",
+    blurb:
+      'Cursor keeps servers in JSON that wrap can edit. The change, how the key reaches the proxy, and what Cursor runs outside MCP.',
+  },
+  {
+    slug: 'codex',
+    h1: 'Screen MCP tool calls in Codex',
+    title: 'Screen MCP tool calls in Codex | agent-chaperone',
+    description:
+      "Put Codex's MCP servers behind agent-chaperone: the config.toml change, forwarding the API key past a cleared environment, and timeouts.",
+    blurb:
+      'Codex keeps servers in TOML and starts them with a cleared environment, so the key has to be forwarded by name. The change, by hand, and the timeouts to set.',
+  },
+  {
+    slug: 'vscode',
+    h1: 'Screen MCP tool calls in VS Code',
+    title: 'Screen MCP tool calls in VS Code | agent-chaperone',
+    description:
+      "Put VS Code agent mode's MCP servers behind agent-chaperone: the mcp.json change, the API key, when wrap can edit the file, and what it misses.",
+    blurb:
+      'VS Code lists servers under servers rather than mcpServers and allows comments in the file. The change, the key, and where wrap has to give way to a hand edit.',
+  },
+  {
+    slug: 'gemini-cli',
+    h1: 'Screen MCP tool calls in Gemini CLI',
+    title: 'Screen MCP tool calls in Gemini CLI | agent-chaperone',
+    description:
+      "Put Gemini CLI's MCP servers behind agent-chaperone, and get the API key past the filter that strips anything named like a credential.",
+    blurb:
+      "Gemini CLI strips variables named like credentials from a server's environment, the API key included. The change, and the env line that gets the key through.",
+  },
 ];
 
 export const SITE = 'https://agentchaperone.dev';
