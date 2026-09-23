@@ -24,7 +24,7 @@ export const RUN = {
  * start claiming to come from a run nobody made. This one says what a reader
  * would install today. They were the same version once and are not any more.
  */
-export const CURRENT_VERSION = '0.3.2';
+export const CURRENT_VERSION = '0.3.3';
 
 /** The thresholds the package actually ships with, from src/policy/schema.ts. */
 export const SHIPPED = {
