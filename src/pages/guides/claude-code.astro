@@ -45,19 +45,19 @@ const precall = SETS.find((one) => one.id === 'precall');
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash|PowerShell|Edit|Write|WebFetch",
+        "matcher": "Bash|PowerShell|Monitor|Edit|Write|NotebookEdit|WebFetch",
         "hooks": [{ "type": "command", "command": "agent-chaperone hook pre" }]
       }
     ],
     "PostToolUse": [
       {
-        "matcher": "Bash|PowerShell|Read|WebFetch",
+        "matcher": "Bash|PowerShell|Read|Grep|WebFetch",
         "hooks": [{ "type": "command", "command": "agent-chaperone hook post" }]
       }
     ],
     "PostToolUseFailure": [
       {
-        "matcher": "Bash|PowerShell|Read|WebFetch",
+        "matcher": "Bash|PowerShell|Read|Grep|WebFetch",
         "hooks": [{ "type": "command", "command": "agent-chaperone hook post" }]
       }
     ]
@@ -78,6 +78,15 @@ const precall = SETS.find((one) => one.id === 'precall');
       returned a body and a command that exited non-zero still printed. And <code>Read</code> sits
       in the post list but not the pre list, because the risk in reading a file is what the file
       says, not that it was read.
+    </p>
+    <p>
+      Three more are there for reasons that are easy to miss. <code>Monitor</code> runs a command in
+      the background under the same permission rules as <code>Bash</code>, so it is screened before
+      it runs. <code>NotebookEdit</code> writes a notebook cell, which is code that runs later, and
+      a cell like <code>!rm -rf ~</code> is a shell command. <code>Grep</code> returns matching
+      lines from files, so it sits in the post list beside <code>Read</code>. A matcher made only of
+      names and <code>|</code> matches each name exactly, so <code>Edit</code> does not cover{' '}
+      <code>NotebookEdit</code>, and each tool has to be named.
     </p>
   </section>
 
