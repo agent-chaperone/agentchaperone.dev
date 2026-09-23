@@ -152,13 +152,16 @@ agent-chaperone wrap ~/.cursor/mcp.json --write</code></pre>
         which <a href={`${REPO}/issues/78`}>does not exist yet</a>.
       </li>
       <li>
-        <b>
-          A remote server wrapped by <code>wrap</code>.
-        </b>{' '}
-        Wrap a server Cursor reaches by URL by hand instead, as{' '}
-        <a href="/guides/mcp-security#wrap">the MCP guide</a> shows, and pass any token it needs
-        with <code>--header-env</code>. Headers written in the Cursor entry stay with Cursor and
-        never reach the proxy.
+        <b>A server that authenticates with headers.</b> Headers written in the Cursor entry stay
+        with Cursor and never reach the proxy, which is why <code>wrap</code>, from 0.3.2, leaves
+        such an entry alone. Put it behind the proxy by hand, as{' '}
+        <a href="/guides/mcp-security#wrap">the MCP guide</a> shows, and pass the token with{' '}
+        <code>--header-env</code>.
+      </li>
+      <li>
+        <b>A server that speaks only the older SSE transport.</b> <code>wrap</code> treats a{' '}
+        <code>url</code> entry as Streamable HTTP, the only transport the proxy reaches a URL over,
+        so a server that answers over SSE alone will not connect once wrapped.
       </li>
       <li>
         <b>What a server does rather than what the call says.</b> This is not a sandbox. It reads
