@@ -33,5 +33,10 @@ export default defineConfig({
       }),
     }),
   ],
+  // The reference documents are markdown copied from the repository. Syntax
+  // highlighting would colour their code with inline style attributes, which
+  // style-src 'self' refuses, so code renders plain here as it does on every
+  // other page.
+  markdown: { syntaxHighlight: false },
   devToolbar: { enabled: false },
 });

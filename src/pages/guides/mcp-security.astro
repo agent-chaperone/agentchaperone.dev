@@ -1,6 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
-import { REPO, SHIPPED } from '../../data/benchmark';
+import { SHIPPED } from '../../data/benchmark';
 import { findGuide, guideUrl } from '../../data/guides';
 import { guideSchema } from '../../data/schema';
 
@@ -159,9 +159,8 @@ agent-chaperone wrap ~/.claude.json --write</code></pre>
       change, then the policy, then the task. Anything left over is forwarded.
     </p>
     <p>
-      The exact wording of every question is in{' '}
-      <a href={`${REPO}/blob/main/docs/design.md`}>the design document</a>, because a screen whose
-      questions you cannot read is asking you to trust a summary of them.
+      The exact wording of every question is in <a href="/docs/design">the design document</a>,
+      because a screen whose questions you cannot read is asking you to trust a summary of them.
     </p>
   </section>
 
@@ -270,8 +269,8 @@ agent-chaperone wrap ~/.claude.json --write</code></pre>
         .
       </li>
       <li>
-        <a href={`${REPO}/blob/main/docs/design.md`}>The design document</a>, for the exact wording
-        of every question and the full policy file.
+        <a href="/docs/design">The design document</a>, for the exact wording of every question and
+        the full policy file.
       </li>
     </ul>
   </section>

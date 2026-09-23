@@ -1,0 +1,84 @@
+---
+import Base from '../../layouts/Base.astro';
+import { REPO } from '../../data/benchmark';
+import { DOCS, docUrl, findDoc } from '../../data/docs';
+import { docFile } from '../../data/doc-files';
+import { docSchema } from '../../data/schema';
+
+export function getStaticPaths() {
+  return DOCS.map((doc) => ({ params: { slug: doc.slug } }));
+}
+
+const doc = findDoc(Astro.params.slug);
+const file = docFile(doc.slug);
+const { headline } = file;
+const body = await file.html();
+const original = `${REPO}/blob/main/${doc.source}`;
+---
+
+<Base
+  title={doc.title}
+  ogTitle={headline}
+  description={doc.description}
+  canonical={docUrl(doc)}
+  schema={docSchema(doc, headline)}
+>
+  <article class="doc">
+    <p class="note">
+      This is{' '}
+      <a href={original}>
+        <code>{doc.source}</code>
+      </a>{' '}
+      from the repository, copied as it stands on the main branch. Paths and commands in it are
+      relative to a checkout of the repository.
+    </p>
+    <Fragment set:html={body} />
+  </article>
+</Base>
+
+<style>
+  /* The copied documents are long, flat markdown rather than the sectioned pages
+     the rest of the site is, so the spacing that sections give elsewhere comes
+     from the headings here. */
+  .doc {
+    display: block;
+    padding-top: 2.5rem;
+  }
+  .doc :global(h1) {
+    margin-top: 1.5rem;
+  }
+  .doc :global(h2) {
+    margin-top: 2.75rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--line);
+  }
+  .doc :global(h3) {
+    margin-top: 1.75rem;
+  }
+  .doc :global(ol),
+  .doc :global(ul) {
+    padding-left: 1.4rem;
+    margin: 0 0 1rem;
+  }
+  .doc :global(li) {
+    margin-bottom: 0.35rem;
+  }
+  /* Tables here carry prose in their cells, so they wrap, where the numeric
+     tables elsewhere on the site do not. */
+  .doc :global(td) {
+    white-space: normal;
+    min-width: 10ch;
+    vertical-align: top;
+  }
+  .doc :global(blockquote) {
+    margin: 0 0 1rem;
+    padding-left: 1rem;
+    border-left: 2px solid var(--line);
+    color: var(--ink-dim);
+  }
+  .doc :global(hr) {
+    border: 0;
+    border-top: 1px solid var(--line);
+    margin: 2rem 0;
+  }
+</style>

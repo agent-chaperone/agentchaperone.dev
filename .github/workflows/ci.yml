@@ -49,6 +49,25 @@ jobs:
       - name: No word runs into a tag
         run: pnpm check:spacing
 
+      - name: No inline styles ship
+        # style-src 'self' refuses a style attribute as firmly as a <style>
+        # block, so one would be a silent rendering bug rather than an error. The
+        # copied docs are the likely source: markdown renders an aligned table
+        # column as a style attribute on every cell.
+        run: |
+          if grep -rl 'style="' dist --include='*.html'; then
+            echo "A page carries an inline style attribute, which the CSP refuses." >&2
+            exit 1
+          fi
+          echo "No inline styles."
+
+      - name: The copied docs match the repository
+        # src/docs holds copies of documents that are written in the tool's
+        # repository. A copy that has fallen behind says something the
+        # repository no longer does, on this site's authority, so a difference
+        # from main fails here and the fix is `pnpm sync:docs`.
+        run: node scripts/sync-docs.mjs --check
+
       - name: The markdown twins are real
         # Generated from the built HTML, so they cannot drift from the pages.
         # What they can do is come out empty if the conversion breaks, and an

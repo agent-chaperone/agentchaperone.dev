@@ -2,7 +2,7 @@
 
 The website for [agent-chaperone](https://github.com/agent-chaperone/agent-chaperone), a calibrated firewall for AI agent tool calls.
 
-Two pages. The front page carries the positioning and a counts table, and `/results` carries the full measured picture. Everything else links into the tool's own repository, because a copy of the docs here would be a second source of truth that drifts, and drift in a security tool's documentation is worse than a click.
+The front page carries the positioning and a counts table, `/results` carries the full measured picture, `/guides` covers each way people set the tool up, and `/docs` serves the tool's reference documents.
 
 ## Running it
 
@@ -24,6 +24,10 @@ There is no analytics of any kind, and therefore no cookie banner. A tool whose 
 Every measured figure on the site comes from `src/data/benchmark.ts`, transcribed from one scorer run in the tool repository. Both pages read from that one file so they cannot disagree with each other, and nothing on the site computes a metric from raw rows: two published numbers for one run is a worse outcome than one table.
 
 When the benchmark is re-measured, update that file and the run metadata at the top of it in the same change.
+
+## The docs
+
+The documents under `/docs` are written in the tool's repository, next to the code they describe, and that stays their only source. `src/docs/` holds copies made by `pnpm sync:docs`, which fetches each one from the repository's main branch and changes nothing but its relative links. CI runs the same script with `--check` and fails when a copy differs from main, so a document that changed upstream cannot sit here stale past the next change to the site. Never edit a copy by hand; change the original and sync.
 
 ## Rules this site holds itself to
 

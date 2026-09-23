@@ -1,3 +1,5 @@
 dist
 .astro
 pnpm-lock.yaml
+# Copies of the repository's documents, kept byte for byte by scripts/sync-docs.mjs.
+src/docs

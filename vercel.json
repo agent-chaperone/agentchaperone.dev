@@ -71,13 +71,8 @@
       "permanent": true
     },
     {
-      "source": "/docs",
-      "destination": "https://github.com/agent-chaperone/agent-chaperone/blob/main/docs/design.md",
-      "permanent": true
-    },
-    {
       "source": "/hooks",
-      "destination": "https://github.com/agent-chaperone/agent-chaperone/blob/main/docs/hooks.md",
+      "destination": "/docs/hooks",
       "permanent": true
     },
     {
