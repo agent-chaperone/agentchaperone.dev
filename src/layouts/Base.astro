@@ -14,6 +14,14 @@ interface Props {
 }
 
 const { title, description, canonical, ogTitle, schema, robots } = Astro.props;
+// Search results cut a description at about 160 characters, and one too short
+// gets replaced with text the engine picks from the page. Either way the page
+// ships a summary nobody wrote, so a description outside the range fails the build.
+if (description.length < 25 || description.length > 160) {
+  throw new Error(
+    `The description for ${canonical} is ${description.length} characters; keep it between 25 and 160`,
+  );
+}
 const year = new Date().getFullYear();
 // Every page is prose that changes when the tool does, so the date a reader
 // should weigh is the date of the release it describes, not the build.
