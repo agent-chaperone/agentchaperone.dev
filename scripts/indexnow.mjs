@@ -38,6 +38,7 @@ const URLS = [
   `https://${HOST}/guides/prompt-injection`,
   `https://${HOST}/guides/claude-code`,
   `https://${HOST}/guides/secret-exfiltration`,
+  `https://${HOST}/guides/ecc`,
 ];
 
 /**

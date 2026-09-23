@@ -41,7 +41,7 @@ ${GUIDES.map((one) => `- [${one.h1}](${SITE}/guides/${one.slug}.md): ${one.blurb
 ## This site, as markdown
 
 - [Overview](${SITE}/index.md): what it screens, what it is not, how it compares, and the shadow-to-enforce path
-- [Guides](${SITE}/guides.md): the four setups, each with what it covers and where it stops
+- [Guides](${SITE}/guides.md): each setup, with what it covers and where it stops
 - [Measured results](${SITE}/results.md): the same tables as the HTML page
 
 ## Docs

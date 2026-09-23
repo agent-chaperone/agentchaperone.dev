@@ -1,0 +1,187 @@
+---
+import Base from '../../layouts/Base.astro';
+import { REPO } from '../../data/benchmark';
+import { findGuide, guideUrl } from '../../data/guides';
+import { guideSchema } from '../../data/schema';
+
+const guide = findGuide('ecc');
+const ECC = 'https://github.com/affaan-m/ECC';
+const AGENTSHIELD = 'https://www.npmjs.com/package/ecc-agentshield';
+---
+
+<Base
+  title={guide.title}
+  ogTitle={guide.h1}
+  description={guide.description}
+  canonical={guideUrl(guide)}
+  schema={guideSchema(guide)}
+>
+  <section>
+    <h1>{guide.h1}</h1>
+    <p class="lede">
+      <a href={ECC}>ECC</a>, Everything Claude Code, installs a large set of Claude Code hooks, and
+      two of the security pieces it ships are AgentShield and GateGuard. agent-chaperone installs
+      next to it and screens something neither of those looks at: what each tool call is about to
+      do, and what each result says, as they happen.
+    </p>
+    <p>
+      The two run side by side and stay independent. Nothing in ECC changes, ECC does not know
+      agent-chaperone is there, and this is not an integration its maintainers have reviewed. It is
+      two plugins whose hooks both fire.
+    </p>
+  </section>
+
+  <section id="layers">
+    <h2>
+      What each one checks{' '}
+      <a class="anchor" href="#layers" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <ul class="plain">
+      <li>
+        <b>
+          <a href={AGENTSHIELD}>AgentShield</a> asks whether the setup is safe.
+        </b>{' '}
+        It audits a Claude Code configuration for vulnerabilities, misconfiguration and injection
+        risk, and reports what it found. It is a scan you run, so it looks at the configuration
+        rather than at any particular call.
+      </li>
+      <li>
+        <b>GateGuard asks whether the agent has looked before it acts.</b> It is one of ECC's{' '}
+        <code>PreToolUse</code> hooks: it stops edits, writes and shell calls until the agent has
+        investigated what they touch. It checks that the agent did its homework, not what the call
+        itself would do.
+      </li>
+      <li>
+        <b>agent-chaperone asks whether this action or this result should be trusted.</b> Before a
+        call runs, it asks whether the call would destroy something, send private data or a
+        credential somewhere external, or has nothing to do with a task you recorded. Before the
+        agent reads a result, it asks whether the text is written to instruct the agent rather than
+        inform you, which is how prompt injection arrives, and whether it exposes a credential.
+      </li>
+    </ul>
+    <p>
+      None of the three substitutes for another. A configuration can pass a scan and a call can
+      follow a thorough investigation, and the call can still be the one that posts a key to a
+      stranger, because the instruction to do it arrived in a page the agent fetched a minute
+      earlier.
+    </p>
+  </section>
+
+  <section id="install">
+    <h2>
+      Install it next to ECC{' '}
+      <a class="anchor" href="#install" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>From inside a Claude Code session:</p>
+    <pre><code>{`/plugin marketplace add agent-chaperone/agent-chaperone
+/plugin install agent-chaperone@agent-chaperone`}</code></pre>
+    <p>
+      That registers three hooks: one before shell commands, file edits and web fetches, and two
+      after shell commands, file reads and web fetches, including ones that failed. It brings the
+      agent-chaperone skill as well, which tells the agent what to do when a call is held.
+    </p>
+    <p>
+      If <code>agent-chaperone</code> is installed globally the plugin uses that. Otherwise the
+      first screened call installs the matching version into the plugin's own data directory, which
+      took 13 seconds when I measured it, and every call after that runs it directly in about a
+      seventh of a second. Uninstalling the plugin removes all of it.
+    </p>
+    <p class="note">
+      Registering the hooks by hand works too, and{' '}
+      <a href="/guides/claude-code">the Claude Code guide</a> has the configuration and what each
+      entry is for.
+    </p>
+  </section>
+
+  <section id="together">
+    <h2>
+      How the two sets of hooks run together{' '}
+      <a class="anchor" href="#together" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      Claude Code runs every hook whose matcher fits a call, from every plugin and every settings
+      file, in parallel. On shell commands, edits and writes, ECC's hooks and agent-chaperone's both
+      fire.
+    </p>
+    <ul class="plain">
+      <li>
+        <b>In shadow mode, which is the default, agent-chaperone gives no decision at all.</b> It
+        writes its judgment to its own log and returns nothing to Claude Code, so there is nothing
+        for ECC's hooks to conflict with. GateGuard stops exactly what it stopped before.
+      </li>
+      <li>
+        <b>In enforce mode it answers ask or deny, and never allow.</b> It can put a question in
+        front of you or refuse a call, but it cannot approve something another hook stopped, and it
+        never skips the permission prompts you set up yourself.
+      </li>
+    </ul>
+    <p>
+      Claude Code's documentation does not say how it combines an ask from one hook with a deny from
+      another. So do not build anything that depends on an order between ECC's hooks and these.
+    </p>
+  </section>
+
+  <section id="shadow">
+    <h2>
+      Start by reading, not blocking{' '}
+      <a class="anchor" href="#shadow" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      Probabilistic screens get some calls wrong, and the only honest way to choose where the lines
+      go is on your own traffic. Leave it in shadow for a while, then:
+    </p>
+    <pre><code>agent-chaperone report</code></pre>
+    <p>
+      That leads with what enforcement would have stopped and did not. If a line looks wrong, move
+      its threshold with <code>agent-chaperone replay --policy candidate.yaml</code>, which decides
+      again over what was already judged and shows which way each decision moves. When the log stops
+      surprising you, set <code>mode: enforce</code> in the policy file.
+    </p>
+    <p class="note">
+      The model screens need a <code>TYPESAFE_API_KEY</code> in the environment Claude Code starts
+      hooks in. Without one the deterministic rules still run, which is the allow and deny lists,
+      the secret patterns, dangerous shell forms and hidden text, and every judgment records that no
+      model was asked.
+    </p>
+  </section>
+
+  <section id="limits">
+    <h2>
+      What this does not cover{' '}
+      <a class="anchor" href="#limits" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <ul class="plain">
+      <li>
+        <b>MCP servers.</b> These hooks screen Claude Code's own tools. Calls to an MCP server go
+        through <a href="/guides/mcp-security">the proxy</a>, which wraps a server with one change
+        to its configuration and uses the same policy file and log.
+      </li>
+      <li>
+        <b>Files you hand the agent.</b> A file you reference in your own message is inlined into
+        the prompt without any tool running, so no hook from either plugin sees it.
+      </li>
+      <li>
+        <b>What a command does rather than what it says.</b> This is not a sandbox. It reads the
+        call, and a program that does something its arguments did not describe is outside it.
+      </li>
+      <li>
+        <b>A guarantee.</b> <a href="/results">The measured results</a> name what the screens miss
+        and what they flag in error, including on documents that only discuss prompt injection.
+      </li>
+    </ul>
+    <p class="note">
+      The full hook reference, including how a withheld result is matched to a tool's own output
+      shape, is <a href={`${REPO}/blob/main/docs/hooks.md`}>in the repository</a>.
+    </p>
+  </section>
+</Base>

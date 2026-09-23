@@ -57,6 +57,15 @@ export const GUIDES: readonly Guide[] = [
     blurb:
       'Reading a file and posting to a URL are both ordinary. The pair is the problem, and a list of allowed tools cannot express it.',
   },
+  {
+    slug: 'ecc',
+    h1: 'Run agent-chaperone alongside ECC',
+    title: 'Run agent-chaperone alongside ECC | agent-chaperone',
+    description:
+      "Add runtime screening next to ECC's hooks. What AgentShield, GateGuard and agent-chaperone each check, how their hooks run together, and how to start without blocking anything.",
+    blurb:
+      "ECC checks your setup and makes the agent look before it edits. This checks what each call does and what each result says, and runs next to ECC's hooks without changing them.",
+  },
 ];
 
 export const SITE = 'https://agentchaperone.dev';
