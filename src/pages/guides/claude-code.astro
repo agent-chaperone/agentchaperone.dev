@@ -1,6 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
-import { REPO, SETS, SHELL } from '../../data/benchmark';
+import { SETS, SHELL } from '../../data/benchmark';
 import { findGuide, guideUrl } from '../../data/guides';
 import { guideSchema } from '../../data/schema';
 
@@ -248,7 +248,7 @@ agent-chaperone task --clear`}</code></pre>
     </p>
     <p class="note">
       The full hooks document, including how a replacement is matched to a tool's own output shape,
-      is <a href={`${REPO}/blob/main/docs/hooks.md`}>in the repository</a>.
+      is in <a href="/docs/hooks">the hooks reference</a>.
     </p>
   </section>
 </Base>

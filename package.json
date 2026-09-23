@@ -18,7 +18,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "indexnow": "node scripts/indexnow.mjs"
+    "indexnow": "node scripts/indexnow.mjs",
+    "sync:docs": "node scripts/sync-docs.mjs"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",

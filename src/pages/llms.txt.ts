@@ -1,5 +1,7 @@
 import type { APIRoute } from 'astro';
 import { CURRENT_VERSION, NPM, REPO, RUN } from '../data/benchmark';
+import { DOCS } from '../data/docs';
+import { headlines } from '../data/doc-files';
 import { GUIDES, SITE } from '../data/guides';
 
 /**
@@ -18,6 +20,7 @@ import { GUIDES, SITE } from '../data/guides';
 const RAW = 'https://raw.githubusercontent.com/agent-chaperone/agent-chaperone/main';
 
 export const GET: APIRoute = () => {
+  const named = headlines();
   const body = `# agent-chaperone
 
 > agent-chaperone is an open-source npm package that screens an AI agent's tool calls before they run, and the tool results those calls return before the agent reads them. It covers MCP servers through a transparent proxy, and a client's own shell commands, file edits and web fetches through a hooks adapter.
@@ -43,12 +46,12 @@ ${GUIDES.map((one) => `- [${one.h1}](${SITE}/guides/${one.slug}.md): ${one.blurb
 - [Overview](${SITE}/index.md): what it screens, what it is not, how it compares, and the shadow-to-enforce path
 - [Guides](${SITE}/guides.md): each setup, with what it covers and where it stops
 - [Measured results](${SITE}/results.md): the same tables as the HTML page
+- [Docs](${SITE}/docs.md): the reference documents, copied from the repository
 
 ## Docs
 
+${DOCS.map((one) => `- [${named[one.slug] ?? one.title}](${SITE}/docs/${one.slug}.md): ${one.blurb}`).join('\n')}
 - [README](${RAW}/README.md): install, the two screens, the commands, and the measured results
-- [Design](${RAW}/docs/design.md): architecture, every screening question and its exact wording, the policy file, the audit log
-- [Hooks](${RAW}/docs/hooks.md): screening a client's own tools, what each hook command answers, and what hooks cannot see
 - [Roadmap](${RAW}/ROADMAP.md): what each version shipped
 
 ## Measured

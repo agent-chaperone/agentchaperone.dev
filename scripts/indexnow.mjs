@@ -39,6 +39,10 @@ const URLS = [
   `https://${HOST}/guides/claude-code`,
   `https://${HOST}/guides/secret-exfiltration`,
   `https://${HOST}/guides/ecc`,
+  `https://${HOST}/docs`,
+  `https://${HOST}/docs/design`,
+  `https://${HOST}/docs/hooks`,
+  `https://${HOST}/docs/benchmark`,
 ];
 
 /**

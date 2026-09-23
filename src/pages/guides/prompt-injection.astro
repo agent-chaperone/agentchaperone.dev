@@ -1,6 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
-import { REPO, SETS, SHIPPED, caught, missed, flaggedInError } from '../../data/benchmark';
+import { SETS, SHIPPED, caught, missed, flaggedInError } from '../../data/benchmark';
 import { findGuide, guideUrl } from '../../data/guides';
 import { guideSchema } from '../../data/schema';
 
@@ -243,8 +243,7 @@ const benign = SETS.find((one) => one.id === 'benign');
     </ul>
     <p class="note">
       The false criterion on the main question, and the second question that was measured and
-      dropped for adding no signal, are both in{' '}
-      <a href={`${REPO}/blob/main/docs/design.md`}>the design document</a>.
+      dropped for adding no signal, are both in <a href="/docs/design">the design document</a>.
     </p>
   </section>
 </Base>

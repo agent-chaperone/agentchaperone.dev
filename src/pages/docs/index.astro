@@ -1,0 +1,81 @@
+---
+import Base from '../../layouts/Base.astro';
+import { REPO } from '../../data/benchmark';
+import { DOCS } from '../../data/docs';
+import { headlines } from '../../data/doc-files';
+import { docsIndexSchema } from '../../data/schema';
+
+const title = 'Docs | agent-chaperone';
+const description =
+  'The reference documents for agent-chaperone: the design, the hooks adapter and the benchmark method, copied from the repository and kept identical to it.';
+const named = headlines();
+---
+
+<Base
+  title={title}
+  ogTitle="Docs"
+  description={description}
+  canonical="https://agentchaperone.dev/docs"
+  schema={docsIndexSchema(named)}
+>
+  <section>
+    <h1>Docs</h1>
+    <p class="lede">
+      How the tool works, as opposed to how to set it up. The <a href="/guides">guides</a> cover the
+      setup; these are the documents the guides point to when a question needs the exact behavior.
+    </p>
+    <p>
+      Each one is written and reviewed in <a href={REPO}>the repository</a>, next to the code it
+      describes, and copied here with only its links changed. Every change to this site is checked
+      against the repository's main branch, and a copy that differs from it fails the check.
+    </p>
+  </section>
+
+  <section id="all">
+    <h2>
+      The documents{' '}
+      <a class="anchor" href="#all" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <ul class="plain">
+      {DOCS.map((one) => (
+        <li>
+          <b>
+            <a href={`/docs/${one.slug}`}>{named[one.slug]}</a>
+          </b>
+          <p>{one.blurb}</p>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section id="repository">
+    <h2>
+      In the repository only{' '}
+      <a class="anchor" href="#repository" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <ul class="plain">
+      <li>
+        <b>
+          <a href={`${REPO}/tree/main/docs/adr`}>Decision records</a>
+        </b>
+        <p>Why the main choices went the way they did, one record per decision.</p>
+      </li>
+      <li>
+        <b>
+          <a href={`${REPO}/blob/main/ROADMAP.md`}>Roadmap</a>
+        </b>
+        <p>What each version shipped, and what the next one is for.</p>
+      </li>
+      <li>
+        <b>
+          <a href={`${REPO}/blob/main/SECURITY.md`}>Security policy</a>
+        </b>
+        <p>How to report a vulnerability, and the security considerations for running it.</p>
+      </li>
+    </ul>
+  </section>
+</Base>

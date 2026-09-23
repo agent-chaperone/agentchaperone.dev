@@ -17,6 +17,7 @@
  */
 
 import { CURRENT_VERSION, NPM, REPO, RUN } from './benchmark';
+import { DOCS, docUrl, type Doc } from './docs';
 import { GUIDES, guideUrl, type Guide } from './guides';
 
 const SITE = 'https://agentchaperone.dev';
@@ -127,14 +128,19 @@ const GUIDES_ID = `${SITE}/guides#collection`;
  * out of context does not, and the breadcrumb is the part that survives being
  * quoted: it names the section the page belongs to without the prose saying so.
  */
-function breadcrumb(guide: Guide): unknown {
+function breadcrumb(section: 'Guides' | 'Docs', name: string, url: string): unknown {
   return {
     '@type': 'BreadcrumbList',
-    '@id': `${guideUrl(guide)}#breadcrumb`,
+    '@id': `${url}#breadcrumb`,
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'agent-chaperone', item: SITE },
-      { '@type': 'ListItem', position: 2, name: 'Guides', item: `${SITE}/guides` },
-      { '@type': 'ListItem', position: 3, name: guide.h1, item: guideUrl(guide) },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: section,
+        item: `${SITE}/${section.toLowerCase()}`,
+      },
+      { '@type': 'ListItem', position: 3, name, item: url },
     ],
   };
 }
@@ -177,7 +183,7 @@ export function guideSchema(guide: Guide): unknown {
         proficiencyLevel: 'Expert',
         dependencies: `agent-chaperone ${CURRENT_VERSION}`,
       },
-      breadcrumb(guide),
+      breadcrumb('Guides', guide.h1, url),
       APPLICATION,
     ],
   };
@@ -212,6 +218,80 @@ export function guidesIndexSchema(): unknown {
           headline: guide.h1,
           description: guide.description,
           url: guideUrl(guide),
+        })),
+      },
+      APPLICATION,
+    ],
+  };
+}
+
+const DOCS_ID = `${SITE}/docs#collection`;
+
+/**
+ * One reference document.
+ *
+ * `TechArticle` like the guides, and `isBasedOn` names the file in the
+ * repository, because that file is the original and this page is a copy of it.
+ * A reader weighing the page can see where the text is maintained, and an engine
+ * that already knows the repository can tie the two together.
+ */
+export function docSchema(doc: Doc, headline: string): unknown {
+  const url = docUrl(doc);
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      ORGANIZATION,
+      WEBSITE,
+      {
+        '@type': 'TechArticle',
+        '@id': `${url}#article`,
+        headline,
+        name: headline,
+        description: doc.description,
+        url,
+        mainEntityOfPage: url,
+        inLanguage: 'en',
+        isPartOf: { '@id': SITE_ID },
+        isBasedOn: `${REPO}/blob/main/${doc.source}`,
+        about: { '@id': APP },
+        author: { '@id': ORG },
+        publisher: { '@id': ORG },
+        license: 'https://www.apache.org/licenses/LICENSE-2.0',
+        isAccessibleForFree: true,
+        datePublished: RUN.date,
+        dateModified: RUN.date,
+        proficiencyLevel: 'Expert',
+        dependencies: `agent-chaperone ${CURRENT_VERSION}`,
+      },
+      breadcrumb('Docs', headline, url),
+      APPLICATION,
+    ],
+  };
+}
+
+/** The docs index, naming every member, for the same reason as the guides index. */
+export function docsIndexSchema(headlines: Readonly<Record<string, string>>): unknown {
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      ORGANIZATION,
+      WEBSITE,
+      {
+        '@type': 'CollectionPage',
+        '@id': DOCS_ID,
+        name: 'agent-chaperone reference documents',
+        description:
+          'The design, the hooks adapter reference and the benchmark method, copied from the repository and kept identical to it.',
+        url: `${SITE}/docs`,
+        isPartOf: { '@id': SITE_ID },
+        about: { '@id': APP },
+        inLanguage: 'en',
+        hasPart: DOCS.map((doc) => ({
+          '@type': 'TechArticle',
+          '@id': `${docUrl(doc)}#article`,
+          headline: headlines[doc.slug] ?? doc.title,
+          description: doc.description,
+          url: docUrl(doc),
         })),
       },
       APPLICATION,
