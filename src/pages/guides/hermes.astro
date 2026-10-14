@@ -1,0 +1,229 @@
+---
+import Base from '../../layouts/Base.astro';
+import { findGuide, guideUrl } from '../../data/guides';
+import { guideSchema } from '../../data/schema';
+
+const guide = findGuide('hermes');
+---
+
+<Base
+  title={guide.title}
+  ogTitle={guide.h1}
+  description={guide.description}
+  canonical={guideUrl(guide)}
+  schema={guideSchema(guide)}
+>
+  <section>
+    <h1>{guide.h1}</h1>
+    <p class="lede">
+      Hermes Agent starts each MCP server in its configuration as a local process and talks to it
+      over stdio. agent-chaperone goes in front of that process, and a plugin puts the same screens
+      in front of the tools Hermes runs itself: its terminal, its file edits and its web fetches.
+    </p>
+    <p>
+      This page covers both. The plugin needs 0.4.0 or later, and so does <code>wrap</code> for
+      Hermes's YAML configuration.
+    </p>
+  </section>
+
+  <section id="install">
+    <h2>
+      Install it{' '}
+      <a class="anchor" href="#install" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <pre><code>npm install -g agent-chaperone</code></pre>
+    <p>
+      A global install means Hermes starts the proxy directly, and it is where the plugin below
+      finds the command and its own files.
+    </p>
+  </section>
+
+  <section id="wrap">
+    <h2>
+      Put a server behind it{' '}
+      <a class="anchor" href="#wrap" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      Hermes reads servers from <code>~/.hermes/config.yaml</code>, under <code>mcp_servers</code>.{' '}
+      <code>agent-chaperone wrap</code> makes the edit. It prints what it would change and writes
+      nothing until you add <code>--write</code>, keeps the original beside the file, and writes
+      back only the entries it changed, so the comments in the file stay.
+    </p>
+    <pre><code>agent-chaperone wrap ~/.hermes/config.yaml
+agent-chaperone wrap ~/.hermes/config.yaml --write</code></pre>
+    <p>A server entry before and after:</p>
+    <pre><code>{`mcp_servers:
+  filesystem:
+    command: npx
+    args: ["-y", "@modelcontextprotocol/server-filesystem", "/home/me/project"]`}</code></pre>
+    <pre><code>{`mcp_servers:
+  filesystem:
+    command: agent-chaperone
+    args:
+      - --server
+      - filesystem
+      - --
+      - npx
+      - -y
+      - "@modelcontextprotocol/server-filesystem"
+      - /home/me/project`}</code></pre>
+    <p>
+      Everything after <code>--</code> is the server that would have run anyway.{' '}
+      <code>--server</code> names the section of the policy file that applies, after the name you
+      gave the server in Hermes. Keys such as <code>env</code>, <code>timeout</code> and{' '}
+      <code>enabled</code> are kept as they were. <code>--unwrap</code> takes it all back out.
+    </p>
+  </section>
+
+  <section id="key">
+    <h2>
+      Give it the API key{' '}
+      <a class="anchor" href="#key" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      The model screens need <code>TYPESAFE_API_KEY</code>. Hermes does not hand a server its own
+      environment: a stdio server gets a short list of safe variables, such as <code>PATH</code> and{' '}
+      <code>HOME</code>, plus whatever the entry's <code>env</code> names. A key exported in your
+      shell does not reach the proxy on its own.
+    </p>
+    <p>
+      Put the key in <code>~/.hermes/.env</code> and name it in the entry. Hermes fills in{' '}
+      <code>{'${...}'}</code> from that file when it starts the server, so the key itself stays out
+      of <code>config.yaml</code>:
+    </p>
+    <pre><code>{`mcp_servers:
+  filesystem:
+    command: agent-chaperone
+    args: ["--server", "filesystem", "--", "npx", "-y", "@modelcontextprotocol/server-filesystem", "/home/me/project"]
+    env:
+      TYPESAFE_API_KEY: "\${TYPESAFE_API_KEY}"`}</code></pre>
+    <p>
+      The proxy removes its own keys before it starts the server behind it, so the server never
+      receives <code>TYPESAFE_API_KEY</code>.
+    </p>
+    <p class="note">
+      Without a key the proxy still starts, the deterministic rules still run, and every judgment
+      records that no model was asked. It never refuses to start because a key is missing.
+    </p>
+  </section>
+
+  <section id="plugin">
+    <h2>
+      Screen Hermes's own tools{' '}
+      <a class="anchor" href="#plugin" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      The terminal, file edits and web fetches Hermes runs itself never cross an MCP connection. A
+      plugin reaches them. Hermes ignores what a shell hook prints after a tool has run, so only a
+      plugin can change what the model reads, and this one hands each call and each result to{' '}
+      <code>agent-chaperone hook pre</code> and <code>hook post</code>. It ships in the npm package:
+    </p>
+    <pre><code>cp -R "$(npm root -g)/agent-chaperone/integrations/hermes" ~/.hermes/plugins/agent-chaperone
+hermes plugins enable agent-chaperone</code></pre>
+    <p>
+      Hermes loads no plugin until it is enabled, which is what the second line does. It adds the
+      name to <code>plugins.enabled</code> in <code>config.yaml</code>, and you can write that by
+      hand instead.
+    </p>
+    <p>
+      A held call goes to Hermes's own approval prompt. Its "always" answer is remembered for that
+      exact call, so it never allows every later use of the tool. Hermes approves the prompt by
+      itself when <code>approvals.mode</code> is <code>off</code> or YOLO mode is on, and refuses
+      the call when nobody is there to answer.
+    </p>
+    <p>
+      A result judged unsafe is withheld: the plugin hands Hermes a notice in place of the tool's
+      result. The tools it screens, and what each command answers, are in{' '}
+      <a href="/docs/hooks#hermes-agent">the hooks reference</a>. MCP tools are left to the proxy,
+      so a wrapped server is not screened twice.
+    </p>
+    <p>
+      The plugin starts the command with Hermes's own environment, which includes{' '}
+      <code>~/.hermes/.env</code>, so the key from the step above reaches it too.
+    </p>
+  </section>
+
+  <section id="check">
+    <h2>
+      Check that it is working{' '}
+      <a class="anchor" href="#check" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <pre><code>hermes mcp test filesystem
+hermes plugins list</code></pre>
+    <p>
+      The first connects to the wrapped server, which starts the proxy in front of it. If it fails,{' '}
+      <code>hermes logs mcp</code> shows what the process printed. The second should show{' '}
+      <code>agent-chaperone</code> as enabled.
+    </p>
+    <p>Then use the server and the terminal once from the agent, and read what was decided:</p>
+    <pre><code>agent-chaperone log</code></pre>
+    <p>
+      Each line is one call or result, with the decision and, in shadow mode, what enforcing would
+      have done instead. Calls from the plugin are recorded under the server name{' '}
+      <code>built-in</code>. A line ending in <code>[not screened]</code> was decided without a
+      model, which means the key did not arrive.
+    </p>
+  </section>
+
+  <section id="cannot">
+    <h2>
+      What this does not cover{' '}
+      <a class="anchor" href="#cannot" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <ul class="plain">
+      <li>
+        <b>A live run, yet.</b> The plugin and the YAML support were written against Hermes Agent
+        0.16.0's published contract and its source, and tested on payloads in its shape. They have
+        not been checked in a live run of Hermes yet.
+      </li>
+      <li>
+        <b>A result that is not a string.</b> A tool that returns images alongside text hands Hermes
+        a structure rather than a string, and the plugin leaves it as it came, unscreened.
+      </li>
+      <li>
+        <b>A failure of the plugin's own.</b> A missing <code>agent-chaperone</code>, a crash, or an
+        answer that does not parse lets the call through rather than blocking it. The plugin waits
+        25 seconds, under the 30 Hermes allows a plugin before it refuses the call itself.
+      </li>
+      <li>
+        <b>A server that authenticates with headers.</b> Headers written in the Hermes entry stay
+        with Hermes and never reach the proxy, which is why <code>wrap</code> leaves such an entry
+        alone. Put it behind the proxy by hand, as{' '}
+        <a href="/guides/mcp-security#wrap">the MCP guide</a> shows, and pass the token with{' '}
+        <code>--header-env</code>.
+      </li>
+      <li>
+        <b>What a server or a tool does rather than what the call says.</b> This is not a sandbox.
+        It reads the call and the result, and a tool that does something its arguments did not
+        describe is outside it.
+      </li>
+    </ul>
+  </section>
+
+  <section id="next">
+    <h2>
+      Next{' '}
+      <a class="anchor" href="#next" aria-label="Link to this section">
+        #
+      </a>
+    </h2>
+    <p>
+      It starts in shadow mode, which blocks nothing.{' '}
+      <a href="/guides/mcp-security">The MCP guide</a> covers what each screen asks, how to read a
+      shadow-mode log, and when to switch to enforce. The exact wording of every question is in{' '}
+      <a href="/docs/design">the design document</a>.
+    </p>
+  </section>
+</Base>
