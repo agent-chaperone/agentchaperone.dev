@@ -1,6 +1,5 @@
 ---
 import Base from '../../layouts/Base.astro';
-import { REPO } from '../../data/benchmark';
 import { findGuide, guideUrl } from '../../data/guides';
 import { guideSchema } from '../../data/schema';
 
@@ -22,8 +21,10 @@ const guide = findGuide('vscode');
       server gets it and each result before the agent does, and nothing about the server changes.
     </p>
     <p>
-      This covers MCP servers only. The terminal commands and file edits the agent runs through VS
-      Code's own tools do not go through MCP, so the proxy does not see them.
+      This page covers MCP servers. The terminal commands and file edits the agent runs through VS
+      Code's own tools do not go through MCP, so the proxy does not see them. From 0.4.0, VS Code's
+      agent hooks, a preview feature, reach them instead: the configuration is in{' '}
+      <a href="/docs/hooks#vs-code">the hooks reference</a>.
     </p>
   </section>
 
@@ -158,9 +159,13 @@ agent-chaperone wrap .vscode/mcp.json --write</code></pre>
     </h2>
     <ul class="plain">
       <li>
-        <b>VS Code's own tools.</b> Terminal commands and file edits the agent makes through VS
-        Code's built-in tools never cross an MCP connection. VS Code has agent hooks in preview, and
-        an adapter for them <a href={`${REPO}/issues/78`}>does not exist yet</a>.
+        <b>VS Code's own tools, without hooks.</b> Terminal commands and file edits the agent makes
+        through VS Code's built-in tools never cross an MCP connection.{' '}
+        <a href="/docs/hooks#vs-code">Hooks</a> reach them, from 0.4.0, with limits. A result judged
+        unsafe is annotated and still reaches the model, because VS Code has no way for a hook to
+        replace a result, and a tool that failed is not screened, because VS Code fires no event for
+        it. The hooks were written against VS Code's published contract and have not been checked in
+        a live run of VS Code yet.
       </li>
       <li>
         <b>A server that authenticates with headers.</b> Headers written in the VS Code entry never

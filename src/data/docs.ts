@@ -39,7 +39,7 @@ export const DOCS: readonly Doc[] = [
     source: 'docs/hooks.md',
     title: 'Hooks reference | agent-chaperone',
     description:
-      "The reference for agent-chaperone's hooks adapter: the Claude Code configuration, what each hook command answers, and what hooks cannot see.",
+      "agent-chaperone's hooks reference: the setup for Claude Code, Cursor, VS Code and Hermes Agent, what each hook command answers, and what hooks cannot see.",
     blurb:
       "Screening a client's own shell, file edits and fetches: the configuration, what each hook command answers, how a withheld result keeps the shape a tool returns, and what hooks cannot see.",
   },

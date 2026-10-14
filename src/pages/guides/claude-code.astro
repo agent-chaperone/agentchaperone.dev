@@ -240,11 +240,31 @@ agent-chaperone task --clear`}</code></pre>
       </a>
     </h2>
     <p>
-      The entries above are for Claude Code, written against its published hook reference. Cursor
-      documents a comparable hook system, and Codex has not been checked. Each client's contract
-      differs in what a post-tool hook may replace, and that difference decides whether the
-      post-result screen can withhold a result or only annotate it. Adding another client means
-      reading that client's contract rather than assuming this one carries over.
+      The entries above are for Claude Code. From 0.4.0 the same two commands also answer Cursor, VS
+      Code agent mode and Hermes Agent, each in its own shape. Each contract differs in what a hook
+      can stop before a call and change after it, and that decides whether the post-result screen
+      can withhold a result or only annotate it:
+    </p>
+    <ul class="plain">
+      <li>
+        <b>Cursor.</b> A held call is refused rather than asked about, and a result judged unsafe is
+        annotated, not withheld. <code>Read</code> and <code>Grep</code> results are not screened,
+        because Cursor hands a hook only a summary of them.
+      </li>
+      <li>
+        <b>VS Code agent mode.</b> A held call goes to VS Code's own confirmation. A result judged
+        unsafe is annotated, not withheld.
+      </li>
+      <li>
+        <b>Hermes Agent.</b> A plugin rather than a shell hook, because Hermes ignores what a shell
+        hook prints after a tool runs. It holds a call through Hermes's approval prompt and
+        withholds a result judged unsafe.
+      </li>
+    </ul>
+    <p>
+      Those three were written against each agent's published contract and its source, and none has
+      been checked in a live run of the agent yet. Codex has not been checked. Adding another agent
+      means reading its contract rather than assuming one of these carries over.
     </p>
     <p class="note">
       The full hooks document, including how a replacement is matched to a tool's own output shape,
