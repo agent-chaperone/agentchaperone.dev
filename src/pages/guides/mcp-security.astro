@@ -232,8 +232,10 @@ agent-chaperone wrap ~/.claude.json --write</code></pre>
       <li>
         <b>The client's own tools.</b> A proxy sees MCP traffic. It does not see the shell commands,
         file edits and web fetches a client runs itself, and on the clients people actually use
-        those are where most of the damage lives.{' '}
-        <a href="/guides/claude-code">Hooks cover that separately</a>.
+        those are where most of the damage lives. Hooks cover that separately, in{' '}
+        <a href="/guides/claude-code">Claude Code</a> and, with the limits each one sets, in{' '}
+        <a href="/docs/hooks#cursor">Cursor</a>, <a href="/docs/hooks#vs-code">VS Code</a> and{' '}
+        <a href="/docs/hooks#hermes-agent">Hermes Agent</a>.
       </li>
       <li>
         <b>What a server does rather than what it said it would.</b> This is not a sandbox. It reads
