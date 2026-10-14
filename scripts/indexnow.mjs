@@ -43,6 +43,7 @@ const URLS = [
   `https://${HOST}/guides/codex`,
   `https://${HOST}/guides/vscode`,
   `https://${HOST}/guides/gemini-cli`,
+  `https://${HOST}/guides/hermes`,
   `https://${HOST}/docs`,
   `https://${HOST}/docs/design`,
   `https://${HOST}/docs/hooks`,

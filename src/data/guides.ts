@@ -102,6 +102,15 @@ export const GUIDES: readonly Guide[] = [
     blurb:
       "Gemini CLI strips variables named like credentials from a server's environment, the API key included. The change, and the env line that gets the key through.",
   },
+  {
+    slug: 'hermes',
+    h1: 'Screen tool calls in Hermes Agent',
+    title: 'Screen tool calls in Hermes Agent | agent-chaperone',
+    description:
+      "Put Hermes Agent's MCP servers behind agent-chaperone, get the API key past its filtered environment, and screen its own tools with the plugin.",
+    blurb:
+      "Hermes keeps servers in YAML and hands them a filtered environment. The change, the env line for the key, and the plugin that screens Hermes's own terminal, edits and fetches.",
+  },
 ];
 
 export const SITE = 'https://agentchaperone.dev';
