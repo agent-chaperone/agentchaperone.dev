@@ -9,10 +9,10 @@
 
 export const RUN = {
   model: 'jev-1.13.0',
-  date: '2026-09-21',
-  requests: 1947,
-  costUsd: 0.062,
-  meanInputTokens: 754,
+  date: '2026-10-21',
+  requests: 2085,
+  costUsd: 0.066,
+  meanInputTokens: 749,
   toolVersion: '0.1.0',
 } as const;
 
@@ -126,19 +126,19 @@ export const SETS: readonly Set[] = [
   {
     id: 'precall',
     name: 'Hand-labeled tool calls',
-    what: 'Calls I labeled myself, leaning toward shell commands because that is where the damage is.',
-    items: 100,
-    positives: 51,
-    auc: 0.993,
+    what: 'Calls labeled by hand, by me and by a contributor, leaning toward shell commands because that is where the damage is.',
+    items: 217,
+    positives: 108,
+    auc: 0.984,
     side: 'call',
     reportedAt: 0.7,
     headline: true,
     sweeps: [
-      { threshold: 0.3, precision: 0.909, recall: 0.98, falsePositives: 5, falseNegatives: 1 },
-      { threshold: 0.5, precision: 0.98, recall: 0.961, falsePositives: 1, falseNegatives: 2 },
-      { threshold: 0.7, precision: 0.978, recall: 0.882, falsePositives: 1, falseNegatives: 6 },
-      { threshold: 0.8, precision: 1.0, recall: 0.824, falsePositives: 0, falseNegatives: 9 },
-      { threshold: 0.9, precision: 1.0, recall: 0.667, falsePositives: 0, falseNegatives: 17 },
+      { threshold: 0.3, precision: 0.863, recall: 0.991, falsePositives: 17, falseNegatives: 1 },
+      { threshold: 0.5, precision: 0.898, recall: 0.981, falsePositives: 12, falseNegatives: 2 },
+      { threshold: 0.7, precision: 0.917, recall: 0.917, falsePositives: 9, falseNegatives: 9 },
+      { threshold: 0.8, precision: 0.969, recall: 0.861, falsePositives: 3, falseNegatives: 15 },
+      { threshold: 0.9, precision: 1.0, recall: 0.667, falsePositives: 0, falseNegatives: 36 },
     ],
   },
   {
@@ -172,15 +172,15 @@ export const SETS: readonly Set[] = [
  * database tool reached over MCP is the case the proxy already covers, so
  * folding them in here would inflate the one number this argument rests on.
  */
-export const SHELL = { scored: 37, dangerous: 21 } as const;
+export const SHELL = { scored: 125, dangerous: 64 } as const;
 
 /** Observed positive rate per confidence bin, for the headline sets combined. */
 export const RELIABILITY = [
-  { from: 0.0, to: 0.2, n: 530, observed: 0.111 },
-  { from: 0.2, to: 0.4, n: 174, observed: 0.684 },
-  { from: 0.4, to: 0.6, n: 294, observed: 0.929 },
-  { from: 0.6, to: 0.8, n: 394, observed: 0.975 },
-  { from: 0.8, to: 1.0, n: 531, observed: 0.998 },
+  { from: 0.0, to: 0.2, n: 573, observed: 0.103 },
+  { from: 0.2, to: 0.4, n: 184, observed: 0.647 },
+  { from: 0.4, to: 0.6, n: 297, observed: 0.923 },
+  { from: 0.6, to: 0.8, n: 406, observed: 0.958 },
+  { from: 0.8, to: 1.0, n: 585, observed: 0.993 },
 ] as const;
 
 export const REPO = 'https://github.com/agent-chaperone/agent-chaperone';
